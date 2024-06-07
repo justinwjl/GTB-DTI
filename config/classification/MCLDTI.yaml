@@ -1,0 +1,41 @@
+output_dir: ./experiment/
+
+dataset:
+  class: Drugbank
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: classification
+  model:
+    class: MCLDTI
+    param:
+      img_size: 256
+      k: 1
+      backbone: CNN
+      embed_dim: 256
+      img_dim: 2
+      fingure_dim: 64
+      smile_dim: 64
+      protein_dim: 256
+      depth: 4
+      depth_e1: 1
+      depth_e2: 1
+      depth_decoder: 1
+      drop_ratio: 0.
+  train: kfold
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [0]
+  batch_size: 16 #8 # 32 # 128
+
+train:
+  num_epoch: 100
+
+eval_metric: [ 'roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
+score_metric: f1

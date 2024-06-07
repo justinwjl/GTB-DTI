@@ -1,0 +1,40 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: TransCPI
+    param: 
+      protein_dim: 100
+      atom_dim: 34
+      hid_dim: 64
+      n_layers: 3
+      n_heads: 8
+      pf_dim: 256
+      dropout: 0.1
+      kernel_size: 5
+
+  train: kfold
+
+param_feature:
+  ngram: 3
+
+optimizer:
+  class: Adam
+  lr: 1.0e-3
+
+engine:
+  device: [3]
+  batch_size: 128
+
+train:
+  num_epoch: 300
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
+score_metric: mse

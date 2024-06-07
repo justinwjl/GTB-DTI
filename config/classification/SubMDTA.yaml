@@ -1,0 +1,39 @@
+output_dir: ./experiment/
+
+dataset:
+  class: Drugbank
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: classification
+  model:
+    class: SubMDTA
+    param:
+      num_features_xd: 78
+      num_features_xt: 25
+      n_filters: 32
+      embed_dim: 128
+      output_dim: 128
+      dropout: 0.1
+      num_features: 78
+      hidden_dim: 128
+  train: kfold
+
+param_feature:
+  max_seq_len: 1000
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [0]
+  batch_size: 512
+
+train:
+  num_epoch: 1000
+
+eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
+score_metric: f1

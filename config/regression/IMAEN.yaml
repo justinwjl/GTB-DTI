@@ -1,0 +1,49 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: IMAEN
+    param:
+      encoder_layer_sizes: [ 128, 256 ]
+      decoder_layer_sizes: [ 256, 78 ]
+      latent_size: 10
+      n_output: 1
+      k1: 1
+      k2: 2
+      k3: 3
+      embed_dim: 128
+      num_layer: 1
+      embedding_num: 128
+      block_num: 3
+      embedding_size: 128
+      num_feature_xt: 25
+      vocab_protein_size: 25 + 1
+      vocab_size: 26
+      filter_num: 32
+      num_feature_xd: 156
+      output_dim: 128
+      dropout: 0.1
+      conditional: False
+      conditional_size: 0
+  train: kfold
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [0]
+  batch_size: 512
+
+train:
+  num_epoch: 1000
+
+eval_metric: [ 'mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman' ]
+score_metric: mse

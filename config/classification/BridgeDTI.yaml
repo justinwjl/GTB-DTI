@@ -1,0 +1,43 @@
+output_dir: ./experiment/
+
+dataset:
+  class: Drugbank
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: classification
+  model:
+    class: BridgeDTI
+    param:
+      outSize: 128
+      cHiddenSizeList: [ 1024 ]
+      fHiddenSizeList: [ 1024,256 ]
+      fSize: 1024
+      cSize: 8450 # 8422
+      gcnHiddenSizeList: [ 128,128 ]
+      fcHiddenSizeList: [ 128 ]
+      nodeNum: 64
+      hdnDropout: 0.5 #0.5
+      fcDropout: 0.5 #0.5
+  train: kfold
+
+param_feature:
+  pSeqMaxLen: 1024
+  dSeqMaxLen: 128
+  cSize: 8450 # 8422
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [1]
+  batch_size: 512
+
+train:
+  num_epoch: 1000
+
+eval_metric: [ 'roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
+score_metric: f1

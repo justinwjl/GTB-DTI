@@ -1,0 +1,40 @@
+output_dir: ./experiment/
+
+dataset:
+  class: KIBA
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: SubMDTA
+    param:
+      n_output: 1
+      num_features_xd: 78
+      num_features_xt: 25
+      n_filters: 32
+      embed_dim: 128
+      output_dim: 128
+      dropout: 0.1
+      num_features: 78
+      hidden_dim: 128
+  train: kfold
+
+param_feature:
+  max_seq_len: 1000
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [3]
+  batch_size: 512
+
+train:
+  num_epoch: 300
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
+score_metric: mse

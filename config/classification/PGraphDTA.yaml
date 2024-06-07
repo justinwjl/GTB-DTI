@@ -1,0 +1,44 @@
+output_dir: ./experiment/
+
+dataset:
+  class: Human # DAVIS # Human # Drugbank
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: classification
+  model:
+    class: PGraphDTA_CNN #PGraphDTA_CNN PLM
+    param:
+      comp_dim: 80
+      prot_dim: 80
+      gat_dim: 50
+      num_head: 3
+      dropout: 0.1
+      alpha: 0.1
+      window: 5
+      layer_cnn: 3
+      latent_dim: 80
+      layer_out: 3
+      dataset: Human # Davis # Human # Davis
+  train: kfold
+
+param_feature:
+  model_choice: 0
+  MAX_PROT_LEN: 1024
+  MAX_MOLECULE_LEN: 100
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: 0
+  batch_size: 1 # 32 # 1 #512
+
+train:
+  num_epoch: 100 # 1000
+
+eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
+score_metric: f1

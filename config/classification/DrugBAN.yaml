@@ -1,0 +1,47 @@
+output_dir: ./experiment/
+
+dataset:
+  class: Drugbank
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: classification
+  model:
+    class: DrugBAN
+    param:
+      DRUG:
+        NODE_IN_FEATS: 75
+        NODE_IN_EMBEDDING: 128
+        HIDDEN_LAYERS: [ 128, 128, 128 ]
+        PADDING: True
+      PROTEIN:
+        EMBEDDING_DIM: 128
+        NUM_FILTERS: [ 128, 128, 128 ]
+        KERNEL_SIZE: [ 3, 6, 9 ]
+        PADDING: True
+      DECODER:
+        IN_DIM: 256
+        HIDDEN_DIM: 512
+        OUT_DIM: 128
+        BINARY: 1
+      BCN:
+        HEADS: 2
+  train: kfold
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [1]
+  batch_size: 512
+
+train:
+  num_epoch: 100
+
+eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
+score_metric: f1
+
+

@@ -1,0 +1,38 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: GATNet
+    param:
+      dropout: 0.1
+  train: kfold
+
+param_feature:
+  atom_property: False
+  hydrogen_info: False
+  electron_p: False
+  stereochemistry: False
+  structural: False
+  edge: False
+  use_pretrain: False
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [1]
+  batch_size: 512
+
+train:
+  num_epoch: 1000
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
+score_metric: mse

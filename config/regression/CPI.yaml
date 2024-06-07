@@ -1,0 +1,38 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: CPINet
+    param: 
+      dim: 10
+      layer_gnn: 3
+      side: 5
+      layer_cnn: 3
+      layer_out: 3
+      dropout: 0.1
+  train: kfold
+
+param_feature:
+  radius: 2
+  ngram: 3
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [0]
+  batch_size: 512
+
+train:
+  num_epoch: 1000
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
+score_metric: mse

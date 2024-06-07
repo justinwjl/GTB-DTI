@@ -1,0 +1,35 @@
+output_dir: ./experiment/
+
+dataset:
+  class: Drugbank
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: classification
+  model:
+    class: MRBDTA
+    param: 
+      d_model: 128
+      n_layers: 1
+      n_heads: 4
+      d_ff: 512
+      hid_dim: 32
+      dropout: 0.1
+
+  train: kfold
+  
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [3]
+  batch_size: 128
+
+train:
+  num_epoch: 300
+
+eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
+score_metric: f1

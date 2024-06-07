@@ -1,0 +1,56 @@
+output_dir: ./experiment/
+
+dataset:
+  class: Drugbank
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: classification
+  model:
+    class: ICAN_model
+    param: 
+      input_dim_drug: 23532
+      input_dim_target: 16693
+      max_drug_seq: 50
+      max_protein_seq: 545
+      emb_size: 384
+      dropout_rate: 0.1
+      scale_down_ratio: 0.25
+      growth_rate: 20
+      transition_rate: 0.5
+      num_dense_blocks: 4
+      kernal_dense_size: 3
+      kernel_size: 5
+      stride: 1
+      n_heads: 4
+      d_dim: 32
+      feature: 128
+      pooling_dropout: 0.5
+      linear_dropout: 0.1
+      intermediate_size: 1536
+      num_attention_heads: 12
+      attention_probs_dropout_prob: 0.1
+      hidden_dropout_prob: 0.1
+      flat_dim: 78192
+  train: kfold
+  
+param_feature:
+  max_prot_len: 545
+  max_smile_len: 50
+  encode_method: 'fcs'
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [2]
+  batch_size: 128
+
+train:
+  num_epoch: 300
+
+eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1', 'rp@k', 'pr@k']
+score_metric: f1

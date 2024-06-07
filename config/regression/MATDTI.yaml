@@ -1,0 +1,32 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: MATDTI7
+    param:
+      dropout: 0.1
+      d_atom: 66
+      d_model: 256
+      # num_head: 16
+  train: kfold
+  
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [2]
+  batch_size: 128
+
+train:
+  num_epoch: 300
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
+score_metric: mse

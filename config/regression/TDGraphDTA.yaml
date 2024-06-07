@@ -1,0 +1,36 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: TDGraphDTA
+    param:
+      block_num: 4 #[2, 4, 8]
+      # vocab_protein_size : 3
+      embedding_size: 128
+      filter_num: 32
+
+  train: memory_test
+
+param_feature:
+  max_seq_len: 1000
+
+optimizer:
+  class: Adam
+  lr: 0.0005
+
+engine:
+  device: [0]
+  batch_size: 32
+
+train:
+  num_epoch: 300
+
+eval_metric: [ 'mse', 'rmse', 'mae', 'r2', 'pcc', 'spearman','ci' ]
+score_metric: mse

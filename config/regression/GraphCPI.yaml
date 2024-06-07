@@ -1,0 +1,32 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: GraphCPI_GAT
+    param:
+      dropout: 0.1
+  train: kfold
+
+param_feature:
+  ngram: 3
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [2]
+  batch_size: 512
+
+train:
+  num_epoch: 1000
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
+score_metric: mse

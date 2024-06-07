@@ -1,0 +1,35 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: MRBDTA
+    param: 
+      d_model: 128
+      n_layers: 1
+      n_heads: 4
+      d_ff: 512
+      hid_dim: 32
+      dropout: 0.1
+
+  train: kfold
+  
+optimizer:
+  class: Adam
+  lr: 1.0e-3
+
+engine:
+  device: [3]
+  batch_size: 32
+
+train:
+  num_epoch: 300
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
+score_metric: mse

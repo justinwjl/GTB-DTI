@@ -1,0 +1,27 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: AttentionDTI
+  train: kfold
+
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [2]
+  batch_size: 64
+
+train:
+  num_epoch: 300
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'spearman']
+score_metric: mse

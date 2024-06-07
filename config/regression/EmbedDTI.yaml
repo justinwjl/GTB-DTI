@@ -1,0 +1,29 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: EmbedDTI_Ori
+    param: 
+      dropout: 0.1
+  train: kfold
+  
+optimizer:
+  class: Adam
+  lr: 5.0e-4
+
+engine:
+  device: [3]
+  batch_size: 512
+
+train:
+  num_epoch: 1000
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
+score_metric: mse

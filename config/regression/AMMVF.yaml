@@ -1,0 +1,44 @@
+output_dir: ./experiment/
+
+dataset:
+  class: DAVIS
+  path: ./data/
+  split: random
+  threshold: 30
+
+task:
+  class: regression
+  model:
+    class: AMMVF
+    param: 
+      protein_dim: 100
+      atom_dim: 34
+      hid_dim: 64
+      n_layers: 3
+      n_heads: 8
+      gat_heads: 3
+      alpha: 0.2
+      k_feature: 16
+      k_dim: 16
+      pf_dim: 256
+      dropout: 0.1
+  train: kfold
+
+param_feature:
+  radius: 2
+  ngram: 3
+
+optimizer:
+  class: Adam
+  lr: 1e-3
+  # lr: 3.125e-5
+
+engine:
+  device: [2]
+  batch_size: 32
+
+train:
+  num_epoch: 40
+
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'spearman']
+score_metric: mse
