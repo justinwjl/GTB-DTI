@@ -149,24 +149,7 @@ def eval_func(eval_fn, target, output, type):
 
 
 def model_size_in_bytes(model, only_trainable=False):
-    """
-    计算 PyTorch 模型的大小（以字节为单位）。
     
-    参数:
-    model (torch.nn.Module): 要计算大小的模型。
-    only_trainable (bool): 如果为 True，则只计算可训练参数的大小。
-    
-    返回:
-    int: 模型大小（字节）。
-    """
-    # param_size = 0
-    # for param in model.parameters():
-    #     if only_trainable:
-    #         if param.requires_grad:
-    #             param_size += param.nelement() * param.element_size()
-    #     else:
-    #         param_size += param.nelement() * param.element_size()
-    # return param_size
     param_size = 0
     param_sum = 0
     for param in model.parameters():

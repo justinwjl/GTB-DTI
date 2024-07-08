@@ -29,7 +29,7 @@ class DT_dataset(InMemoryDataset):
             self.data_list, self.slices_list = torch.load(self.processed_paths[self.data_type_dict[split]])
 
     def __getitem__(self, idx):
-        # 获取对应于idx的slices
+
         data_list = []
 
         # for data_item, slice_item in list(zip(self.data_list[self.split], self.slices_list[self.split])):
@@ -90,12 +90,8 @@ class DT_dataset(InMemoryDataset):
         smiles, sequences, labels = data_total.iloc[0].to_list(), data_total.iloc[1].to_list(), data_total.iloc[
             2].to_list()
 
-        # Input format is fixed, need to change the models to adapt to this kind of input
-        # more_params = []
         data_list = self.featurizer.data_input(smiles, sequences, labels)
-        # params_dict = {}
-        # params_dict[more_params[0]] = more_params[1]
-        # more_params = {'cSize': cSize}
+
         max_graphs = len(data_list[0])
         # Create a dictionary of lists of length max_graphs
         batched_data = {}
@@ -119,16 +115,10 @@ class DT_dataset(InMemoryDataset):
         if self.pre_transform is not None:
             data_list = [self.pre_transform(data) for data in data_list]
 
-        # Usage of collate:
-        # data, slices = self.collate(data_list)
-        # torch.save((data, slices), self.processed_paths[0])
 
         collated_data = {}
         for data_type in self.data_type_list:
             collated_data[data_type] = [self.collate(sample) for sample in batched_data[data_type]]
-            # tmp_list = batched_data[data_type][0]
-            # tmp_data, tmp_slices = self.collate(tmp_list)
-            # collated_data[data_type] = tmp_data, tmp_slices
 
         # Initialize the dictionary for saved data and slices
         saved_data = {}
@@ -145,7 +135,6 @@ class DT_dataset(InMemoryDataset):
                 saved_slice[data_type].append(slice_tmp)
 
             torch.save((saved_data[data_type], saved_slice[data_type]), self.processed_paths[idx])
-        # return params_dict
 
     def __repr__(self):
         return '{}()'.format(self.name)
@@ -153,7 +142,6 @@ class DT_dataset(InMemoryDataset):
     def len(self):
         if self.slices_list is None:
             return 1
-        # for _, value in nested_iter(self.slices_list[self.split][0]):
         for _, value in nested_iter(self.slices_list[0]):
             return len(value) - 1
         return 0
