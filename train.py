@@ -15,10 +15,11 @@ from utils import *
 import re, json
 from collections import defaultdict
 from torch.optim.optimizer import Optimizer
-
+import torch.optim.lr_scheduler as lr_scheduler
+from tqdm import tqdm
 
 class Trainer:
-    def __init__(self, cfg, logger, scheduler=None, model_path="", seed=None):
+    def __init__(self, cfg, logger, model_path="", seed=None):
 
         self.cfg = cfg
         self.logger = logger
@@ -77,8 +78,18 @@ class Trainer:
 
         self.logger.info("Model size: {:.2f} MB".format(model_size_in_bytes(self.model) / (1024 ** 2)))
         self.score_metric = cfg['score_metric']
-        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=cfg.optimizer['lr'])
-        self.scheduler = scheduler
+        weight_decay = cfg.optimizer.get("weight_decay", 0)
+        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=cfg.optimizer['lr'], weight_decay=weight_decay)
+
+        optimizer_config = cfg.optimizer
+        use_scheduler = optimizer_config.get('scheduler', False)
+        self.scheduler = None
+        if use_scheduler:
+            print(f"Current model {cfg.task.model['class']} is using scheduler.")
+            step_size = optimizer_config.get('step_size', 10)
+            gamma = optimizer_config.get('gamma', 0.5)
+            self.scheduler = lr_scheduler.StepLR(self.optimizer, step_size=step_size, gamma=gamma)
+
         self.epochs = cfg.train['num_epoch']
         self.model_path = model_path
 
@@ -92,7 +103,9 @@ class Trainer:
         self.model.train()
 
         loss_total = 0.0
-        for batch_idx, batch in enumerate(dataloader):
+        # for batch_idx, batch in enumerate(dataloader):
+        pbar = tqdm(total=len(dataloader), desc=f'Epoch {epoch}/400', unit='b')
+        for batch in dataloader:
             if self.device.type == "cuda":
                 batch = cuda(batch, device=self.device)
             self.optimizer.zero_grad()
@@ -106,10 +119,13 @@ class Trainer:
             self.optimizer.step()
             loss_total += loss.item()
 
-            if batch_idx % 20 == 0:
-                self.logger.info('Train epoch: {} [{:.0f}%)]\tLoss: {:.6f}'.format(epoch,
-                                                                                   100. * batch_idx / len(dataloader),
-                                                                                   loss_total / 20))
+            # if batch_idx % 20 == 0:
+            #     self.logger.info('Train epoch: {} [{:.0f}%)]\tLoss: {:.6f}'.format(epoch,
+            #                                                                        100. * batch_idx / len(dataloader),
+            #                                                                        loss_total / 20))
+            pbar.set_postfix(loss=loss.item())
+            pbar.update(1)
+
         if self.scheduler:
             self.scheduler.step()
         return loss_total
@@ -250,8 +266,12 @@ class Trainer:
         if self.task == 'regression':
             df_results.iloc[-1] = df_results.iloc[-1].apply(lambda x: ''.join(re.findall(r'[0-9.]+', str(x)[:40])))
             df_results = df_results.map(lambda x: pd.to_numeric(x, errors='coerce'))
-        df_results['mean'] = df_results.mean(axis=1)
+
+        numeric_data = df_results.copy(deep=True)
+        df_results['mean'] = numeric_data.mean(axis=1)
+        df_results['std'] = numeric_data.std(axis=1, ddof=1)
         df_results.to_csv(os.path.join(self.model_path, 'results.csv'), index=False)
+        del numeric_data
 
     def mem_speed_bench(self):
         total_epoch = 6

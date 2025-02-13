@@ -8,7 +8,7 @@ from gensim.models import Word2Vec
 import pandas as pd
 import os
 from utils import w2v_train
-from keras.preprocessing import text, sequence
+from tensorflow.keras.preprocessing import text, sequence
 from rdkit import RDConfig
 class GraphCPI_featurize:
     def __init__(self, max_prot_len=1000, **config):

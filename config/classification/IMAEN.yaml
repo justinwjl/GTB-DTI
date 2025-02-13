@@ -28,7 +28,7 @@ task:
       filter_num: 32
       num_feature_xd: 156
       output_dim: 128
-      dropout: 0.1
+      dropout: 0.2
       conditional: False
       conditional_size: 0
   train: kfold
@@ -38,11 +38,11 @@ optimizer:
   lr: 5.0e-4
 
 engine:
-  device: [1]
-  batch_size: 512
+  device: [0]
+  batch_size: 128
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
 score_metric: f1

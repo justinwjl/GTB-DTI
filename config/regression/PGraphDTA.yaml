@@ -15,7 +15,7 @@ task:
       prot_dim: 80
       gat_dim: 50
       num_head: 3
-      dropout: 0.1
+      dropout: 0.2
       alpha: 0.1
       window: 5
       layer_cnn: 3
@@ -33,11 +33,11 @@ optimizer:
   lr: 5.0e-4
 
 engine:
-  device: [1]
+  device: [0]
   batch_size: 512
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
 score_metric: mse

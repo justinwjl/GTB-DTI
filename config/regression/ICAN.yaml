@@ -28,7 +28,7 @@ task:
       d_dim: 32
       feature: 128
       pooling_dropout: 0.5
-      linear_dropout: 0.1
+      linear_dropout: 0.3
       intermediate_size: 1536
       num_attention_heads: 12
       attention_probs_dropout_prob: 0.1
@@ -43,14 +43,14 @@ param_feature:
 
 optimizer:
   class: Adam
-  lr: 5.0e-4
+  lr: 0.001
 
 engine:
   device: [0]
   batch_size: 128
 
 train:
-  num_epoch: 300
+  num_epoch: 400
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
 score_metric: mse

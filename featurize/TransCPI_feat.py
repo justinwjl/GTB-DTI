@@ -2,7 +2,7 @@ import numpy as np
 from rdkit import Chem
 import torch
 from featurize.base import *
-from keras.preprocessing import text, sequence
+from tensorflow.keras.preprocessing import text, sequence
 from utils import w2v_train
 import os
 from torch_geometric.data import Data

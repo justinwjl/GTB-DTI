@@ -1,7 +1,7 @@
 output_dir: ./experiment/
 
 dataset:
-  class: Human # DAVIS # Human # Drugbank
+  class: Drugbank #Human # DAVIS # Human # Drugbank
   path: ./data/
   split: random
   threshold: 30
@@ -15,7 +15,7 @@ task:
       prot_dim: 80
       gat_dim: 50
       num_head: 3
-      dropout: 0.1
+      dropout: 0.2
       alpha: 0.1
       window: 5
       layer_cnn: 3
@@ -34,11 +34,11 @@ optimizer:
   lr: 5.0e-4
 
 engine:
-  device: 0
-  batch_size: 1 # 32 # 1 #512
+  device: [0]
+  batch_size: 512
 
 train:
-  num_epoch: 100 # 1000
+  num_epoch: 400
 
 eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
 score_metric: f1

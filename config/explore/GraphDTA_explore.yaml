@@ -1,38 +1,37 @@
 output_dir: ./experiment/
 
 dataset:
-  class: Davis
+  class: Drugbank # Human
   path: ./data/
   split: random
   threshold: 30
 
 task:
-  class: regression
+  class: classification
   model:
-    class: GCNNet_pretrain
+    class: GCNNet
     param:
-      dropout: 0.1
+      dropout: 0.2
   train: kfold
 
 param_feature:
-  atom_property: False
+  atom_property: True
   hydrogen_info: False
   electron_p: False
   stereochemistry: False
   structural: False
   edge: False
-  use_pretrain: True
 
 optimizer:
   class: Adam
   lr: 5.0e-4
 
 engine:
-  device: [2]
+  device: [0]
   batch_size: 512
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
-eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
-score_metric: mse
+eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
+score_metric: f1

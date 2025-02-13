@@ -17,7 +17,7 @@ task:
       n_layers: 3
       n_heads: 8
       pf_dim: 256
-      dropout: 0.1
+      dropout: 0.2
       kernel_size: 5
 
   train: kfold
@@ -26,15 +26,19 @@ param_feature:
   ngram: 3
 
 optimizer:
-  class: Adam
-  lr: 1.0e-3
+  class: RAdam
+  lr: 1.0e-4
+  scheduler: True
+  step_size: 5
+  gamma: 0.5
+  weight_decay: 1.0e-4
 
 engine:
-  device: [3]
-  batch_size: 128
+  device: [0]
+  batch_size: 8
 
 train:
-  num_epoch: 300
+  num_epoch: 400
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
 score_metric: mse

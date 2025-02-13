@@ -30,13 +30,16 @@ param_feature:
 optimizer:
   class: Adam
   lr: 5.0e-4
+  scheduler: True
+  step_size: 10
+  gamma: 0.5
 
 engine:
   device: [0]
-  batch_size: 512
+  batch_size: 16
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
 score_metric: mse

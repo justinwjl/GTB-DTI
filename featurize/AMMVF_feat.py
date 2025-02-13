@@ -6,7 +6,7 @@ from torch_geometric.data import Data
 from rdkit import Chem
 import os
 from utils import dump_dictionary
-from keras.preprocessing import text, sequence
+from tensorflow.keras.preprocessing import text, sequence
 import pandas as pd
 from utils import w2v_train
 from featurize.base import *

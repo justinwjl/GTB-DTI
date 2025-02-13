@@ -29,7 +29,7 @@ task:
       filter_num: 32
       num_feature_xd: 156
       output_dim: 128
-      dropout: 0.1
+      dropout: 0.2
       conditional: False
       conditional_size: 0
   train: kfold
@@ -40,10 +40,10 @@ optimizer:
 
 engine:
   device: [0]
-  batch_size: 512
+  batch_size: 128
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: [ 'mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman' ]
 score_metric: mse

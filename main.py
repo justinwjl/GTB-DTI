@@ -5,7 +5,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from utils import load_config, load_data
+from utils import load_config
 import numpy as np
 import logging
 import os
@@ -45,9 +45,9 @@ def get_logger(filename, verbosity=1, name=None):
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
-    sh = logging.StreamHandler()
-    sh.setFormatter(formatter)
-    logger.addHandler(sh)
+    # sh = logging.StreamHandler()
+    # sh.setFormatter(formatter)
+    # logger.addHandler(sh)
 
     return logger
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     logger = get_logger(perf_save_path + '/exp.log')
     logger.info(cfg)
 
-    trainer = Trainer(cfg, logger, scheduler=None, model_path=perf_save_path, seed=args.seed)
+    trainer = Trainer(cfg, logger, model_path=perf_save_path, seed=args.seed)
 
     if cfg.task['train'] == 'kfold':
         trainer.K_fold_train()

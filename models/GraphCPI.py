@@ -70,7 +70,7 @@ class GraphCPI_GATGCN(nn.Module):
     
 class GraphCPI_GAT(nn.Module):
     def __init__(self, num_features_xd=78, n_output=1, num_features_xt=25,
-                     n_filters=32, embed_dim=128, output_dim=128, dropout=0.2, **config):
+                     n_filters=32, embed_dim=128, output_dim=128, dropout=0.6, **config):
         super(GraphCPI_GAT, self).__init__()
 
         self.n_output = n_output
@@ -131,7 +131,7 @@ class GraphCPI_GAT(nn.Module):
 
     
 class GraphCPI_GCN(nn.Module):
-    def __init__(self, n_output=1, n_filters=32, embed_dim=128,num_features_xd=78, num_features_xt=25, output_dim=128, dropout=0.2, **config):
+    def __init__(self, n_output=1, n_filters=32, embed_dim=128,num_features_xd=78, num_features_xt=25, output_dim=128, dropout=0.5, **config):
 
         super(GraphCPI_GCN, self).__init__()
         # 78 91 102 106 109 110
@@ -200,7 +200,7 @@ class GraphCPI_GCN(nn.Module):
     
 class GraphCPI_GIN(nn.Module):
     def __init__(self, n_output=1,num_features_xd=78, num_features_xt=25,
-                 n_filters=32, embed_dim=128, output_dim=128, dropout=0.2, **config):
+                 n_filters=32, embed_dim=128, output_dim=128, dropout=0.6, **config):
 
         super(GraphCPI_GIN, self).__init__()
 

@@ -10,18 +10,20 @@ task:
   class: classification
   model:
     class: SAGNet
+    param:
+      dropout: 0.1
   train: kfold
 
 optimizer:
   class: Adam
-  lr: 5.0e-4
+  lr: 0.001
 
 engine:
-  device: [1]
+  device: [0]
   batch_size: 512
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
 score_metric: f1

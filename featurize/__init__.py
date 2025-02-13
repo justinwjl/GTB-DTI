@@ -3,7 +3,6 @@ import warnings
 warnings.filterwarnings("ignore")
 from .GraphDTA_feat import GraphDTA_featurize
 from .MGraphDTA_feat import MGraph_featurize
-from .Hyperattention_feat import Hyperattention_featurize
 from .MolTrans_feat import MolTrans_featurize
 from .CPI_feat import CPI_featurize
 from .CSDTI_feat import CSDTI_featurize
@@ -21,14 +20,11 @@ from .our3_feat import our3_featurize
 from .PGraphDTA_feat import PGraphDTA_PLM_featurize, PGraphDTA_CNN_featurize
 from .ColdDTA_feat import coldDTA_featurize
 from .SubMDTA_feat import SubMDTA_featurize
-# from .gt_feat import gt_featurize
 
 def get_featurizer(name, **config):
     if name in ['GAT_GCN', 'GATNet', 'GINConvNet', 'GCNNet', 'DeepGLSTM', 'SAGNet', 'SAGNet_HIER', 'HGC', 'GEN',
                 'GCNNet_pretrain', 'IMAEN', 'TDGraphDTA']:
         return GraphDTA_featurize(**config)
-    elif name in ['AttentionDTI']:
-        return Hyperattention_featurize()
     elif name in ['MolTransformer', 'FOTFCPI']:
         return MolTrans_featurize()
     elif name in ['MGraphDTA']:

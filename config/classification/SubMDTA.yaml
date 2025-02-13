@@ -16,7 +16,7 @@ task:
       n_filters: 32
       embed_dim: 128
       output_dim: 128
-      dropout: 0.1
+      dropout: 0.2
       num_features: 78
       hidden_dim: 128
   train: kfold
@@ -33,7 +33,7 @@ engine:
   batch_size: 512
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
 score_metric: f1

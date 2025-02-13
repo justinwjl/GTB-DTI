@@ -1,13 +1,13 @@
 output_dir: ./experiment/
 
 dataset:
-  class: Drugbank
+  class: Davis
   path: ./data/
   split: random
   threshold: 30
 
 task:
-  class: classification
+  class: regression
   model:
     class: GraphCPI_GIN
     param:
@@ -16,6 +16,12 @@ task:
 
 param_feature:
   ngram: 3
+  atom_property: True
+  hydrogen_info: True
+  electron_p: True
+  stereochemistry: True
+  structural: True
+  edge: False
 
 optimizer:
   class: Adam
@@ -28,5 +34,5 @@ engine:
 train:
   num_epoch: 400
 
-eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
-score_metric: f1
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
+score_metric: mse

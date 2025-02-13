@@ -16,7 +16,7 @@ task:
       side: 5
       layer_cnn: 3
       layer_out: 3
-      dropout: 0.1
+      dropout: 0
   train: kfold
 
 param_feature:
@@ -25,14 +25,18 @@ param_feature:
 
 optimizer:
   class: Adam
-  lr: 5.0e-4
+  lr: 0.001
+  scheduler: True
+  step_size: 10
+  gamma: 0.5
+  weight_decay: 1.0e-6
 
 engine:
   device: [0]
-  batch_size: 512
+  batch_size: 1
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
 score_metric: mse

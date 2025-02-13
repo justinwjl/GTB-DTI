@@ -9,9 +9,9 @@ dataset:
 task:
   class: regression
   model:
-    class: GraphCPI_GAT
+    class: GraphCPI_GIN
     param:
-      dropout: 0.1
+      dropout: 0.6 # GAT: 0.6, GCN: 0.5, GIN : 0.6
   train: kfold
 
 param_feature:
@@ -22,11 +22,11 @@ optimizer:
   lr: 5.0e-4
 
 engine:
-  device: [2]
+  device: [0]
   batch_size: 512
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
 score_metric: mse

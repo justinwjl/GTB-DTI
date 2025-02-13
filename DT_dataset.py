@@ -4,8 +4,6 @@ import os
 from itertools import repeat
 from torch_geometric.data.in_memory_dataset import nested_iter
 import pandas as pd
-from torch.utils.data import DataLoader, Dataset
-
 
 class DT_dataset(InMemoryDataset):
 

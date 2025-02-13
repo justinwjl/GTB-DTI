@@ -9,30 +9,30 @@ dataset:
 task:
   class: regression
   model:
-    class: GraphCPI_GCN
+    class: GCNNet_pretrain
     param:
-      dropout: 0.1
+      dropout: 0.2
   train: kfold
 
 param_feature:
-  ngram: 3
-  atom_property: True
-  hydrogen_info: True
-  electron_p: True
-  stereochemistry: True
-  structural: True
+  atom_property: False
+  hydrogen_info: False
+  electron_p: False
+  stereochemistry: False
+  structural: False
   edge: False
+  use_pretrain: True
 
 optimizer:
   class: Adam
   lr: 5.0e-4
 
 engine:
-  device: [2]
+  device: [0]
   batch_size: 512
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
-eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
+eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
 score_metric: mse

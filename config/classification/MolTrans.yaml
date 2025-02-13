@@ -31,14 +31,14 @@ task:
   
 optimizer:
   class: Adam
-  lr: 1.25e-4
+  lr: 1e-5
 
 engine:
-  device: [2]
-  batch_size: 32
+  device: [0]
+  batch_size: 64
 
 train:
-  num_epoch: 300
+  num_epoch: 400
 
 eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
 score_metric: f1

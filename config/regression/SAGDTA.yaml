@@ -10,18 +10,20 @@ task:
   class: regression
   model:
     class: SAGNet
+    param:
+      dropout: 0.1
   train: kfold
 
 optimizer:
   class: Adam
-  lr: 5.0e-4
+  lr: 0.001
 
 engine:
-  device: [2]
+  device: [0]
   batch_size: 512
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
 score_metric: mse

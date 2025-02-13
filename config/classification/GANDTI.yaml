@@ -14,7 +14,7 @@ task:
       features: 40
       GNN_depth: 3
       MLP_depth: 2 
-      dropout: 0.1
+      dropout: 0.5
   train: kfold
 
 param_feature:
@@ -23,14 +23,15 @@ param_feature:
 
 optimizer:
   class: Adam
-  lr: 5.0e-4
+  lr: 0.001
+  weight_decay: 1.0e-6
 
 engine:
-  device: [3]
-  batch_size: 512
+  device: [0]
+  batch_size: 1
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
 score_metric: f1

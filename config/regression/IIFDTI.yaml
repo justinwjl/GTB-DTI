@@ -16,22 +16,23 @@ task:
       kernel_size: 9
       n_heads: 8
       pf_dim: 256
-      dropout: 0.1
+      dropout: 0.2
   train: kfold
 
 param_feature:
   ngram: 3
 
 optimizer:
-  class: Adam
-  lr: 1.25e-4
+  class: AdamW
+  lr: 0.001
+  weight_decay: 1.0e-6
 
 engine:
-  device: [1]
-  batch_size: 32
+  device: [0]
+  batch_size: 64
 
 train:
-  num_epoch: 300
+  num_epoch: 400
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
 score_metric: mse

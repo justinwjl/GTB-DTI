@@ -16,14 +16,14 @@ task:
   
 optimizer:
   class: Adam
-  lr: 5.0e-4
+  lr: 3.0e-4
 
 engine:
   device: [0]
-  batch_size: 512
+  batch_size: 128
 
 train:
-  num_epoch: 1000
+  num_epoch: 400
 
 eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
 score_metric: f1
