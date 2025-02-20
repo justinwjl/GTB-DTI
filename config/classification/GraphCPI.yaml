@@ -9,9 +9,7 @@ dataset:
 task:
   class: classification
   model:
-    class: GraphCPI_GIN
-    param:
-      dropout: 0.6 # GAT: 0.6, GCN: 0.5, GIN : 0.6
+    class: GraphCPI_GATGCN
   train: kfold
 
 param_feature:
@@ -26,7 +24,7 @@ engine:
   batch_size: 512
 
 train:
-  num_epoch: 400
+  num_epoch: 1000
 
 eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
 score_metric: f1

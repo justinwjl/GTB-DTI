@@ -34,7 +34,7 @@ engine:
   batch_size: 512
 
 train:
-  num_epoch: 400
+  num_epoch: 1000
 
 eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci', 'spearman']
 score_metric: mse

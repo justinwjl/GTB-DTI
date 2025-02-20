@@ -103,7 +103,7 @@ class IIFDTI_featurize:
         w2v_model = w2v_train(saved_path, proteins, ngram=self.ngram)
         embedding_matrix = np.zeros((nb_words + 1, self.vector_size))
         for word, i in word_index.items():
-            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv.index2word else None
+            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv.index_to_key else None
             if embedding_glove_vector is not None:
                 embedding_matrix[i] = embedding_glove_vector
             else:
@@ -139,7 +139,7 @@ class IIFDTI_featurize:
         
         embedding_matrix = np.zeros((nb_words + 1, self.vector_size))
         for word, i in word_index.items():
-            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv.index2word else None
+            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv.index_to_key else None
             if embedding_glove_vector is not None:
                 embedding_matrix[i] = embedding_glove_vector
             else:

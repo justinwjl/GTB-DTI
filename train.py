@@ -104,7 +104,7 @@ class Trainer:
 
         loss_total = 0.0
         # for batch_idx, batch in enumerate(dataloader):
-        pbar = tqdm(total=len(dataloader), desc=f'Epoch {epoch}/400', unit='b')
+        pbar = tqdm(total=len(dataloader), desc=f'Epoch {epoch}/{self.epochs}', unit='b')
         for batch in dataloader:
             if self.device.type == "cuda":
                 batch = cuda(batch, device=self.device)
@@ -195,7 +195,7 @@ class Trainer:
         self.logger.info('best epoch:{}'.format(best_epoch))
         self.logger.info('best score:{}'.format(best_score))
 
-    def K_fold_train(self, n_splits=5):
+    def K_fold_train(self, n_splits=5, early_stop_patience=10):
 
         # data
         results = {}
@@ -250,8 +250,9 @@ class Trainer:
                                    os.path.join(self.model_path, f'best_fold_{fold}_model.pth'))
                         metric_test = self.evaluate(self.test_loader)
                 loss_dict[fold].append(loss)
-            # torch.save(self.model.state_dict(), os.path.join(self.model_path, 'best_model.pth'))
-            # metric = self.evaluate(self.test_loader)
+                if epoch - best_epoch >= early_stop_patience:
+                    self.logger.info(f"Early stopping triggered at epoch {epoch} with best epoch {best_epoch}.")
+                    break
             results[fold] = metric_test
             self.logger.info('Test for fold {0}:{1}'.format(fold, metric_test))
             self.logger.info('--------------------------------')
