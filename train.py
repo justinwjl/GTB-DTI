@@ -200,6 +200,8 @@ class Trainer:
         # data
         results = {}
         result = []
+        exit_epoch_info = {}  # 记录每个fold退出时的epoch
+        best_epoch_info = {}
         num_worker = 0
         kfold = KFold(n_splits=n_splits, shuffle=True, random_state=self.seed)
         loss_dict = {}
@@ -227,7 +229,7 @@ class Trainer:
 
             self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()),
                                               lr=self.cfg.optimizer['lr'])
-
+            exit_epoch = 0
             # for epoch in tqdm(range(self.epochs)):
             for epoch in range(self.epochs):
                 loss = self.train_epoch(epoch, train_loader)
@@ -252,7 +254,10 @@ class Trainer:
                 loss_dict[fold].append(loss)
                 if epoch - best_epoch >= early_stop_patience:
                     self.logger.info(f"Early stopping triggered at epoch {epoch} with best epoch {best_epoch}.")
+                    exit_epoch = epoch
                     break
+            exit_epoch_info[fold] = exit_epoch  # 退出时的epoch（触发break时为当前epoch，否则为最后一个epoch）
+            best_epoch_info[fold] = best_epoch
             results[fold] = metric_test
             self.logger.info('Test for fold {0}:{1}'.format(fold, metric_test))
             self.logger.info('--------------------------------')
@@ -267,6 +272,12 @@ class Trainer:
         if self.task == 'regression':
             df_results.iloc[-1] = df_results.iloc[-1].apply(lambda x: ''.join(re.findall(r'[0-9.]+', str(x)[:40])))
             df_results = df_results.map(lambda x: pd.to_numeric(x, errors='coerce'))
+
+        # exit_epoch_series = pd.Series({fold: int(exit_epoch_info.get(fold, 0)) for fold in results.keys()})
+        # best_epoch_series = pd.Series({fold: int(best_epoch_info.get(fold, 0)) for fold in results.keys()})
+        exit_epoch_series = pd.Series({fold: exit_epoch_info.get(fold, 0) for fold in results.keys()})
+        best_epoch_series = pd.Series({fold: best_epoch_info.get(fold, 0) for fold in results.keys()})
+        df_results = pd.concat([df_results, exit_epoch_series.to_frame().T, best_epoch_series.to_frame().T])
 
         numeric_data = df_results.copy(deep=True)
         df_results['mean'] = numeric_data.mean(axis=1)
