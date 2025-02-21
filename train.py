@@ -256,11 +256,11 @@ class Trainer:
             results[fold] = metric_test
             self.logger.info('Test for fold {0}:{1}'.format(fold, metric_test))
             self.logger.info('--------------------------------')
-            df_loss = pd.DataFrame(loss_dict)
+            df_loss = pd.DataFrame({fold: pd.Series(loss_list) for fold, loss_list in loss_dict.items()})
             df_loss.to_csv(os.path.join(self.model_path, f'loss_dict{fold}.csv'), index=False)
             
         self.logger.info(results)
-        df_loss = pd.DataFrame(loss_dict)
+        df_loss = pd.DataFrame({fold: pd.Series(loss_list) for fold, loss_list in loss_dict.items()})
         df_loss.to_csv(os.path.join(self.model_path, 'loss_dict.csv'), index=False)
 
         df_results = pd.DataFrame(results)
