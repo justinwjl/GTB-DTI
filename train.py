@@ -128,7 +128,7 @@ class Trainer:
 
         if self.scheduler:
             self.scheduler.step()
-        return loss_total
+        return loss_total / len(dataloader)
 
     @torch.no_grad()
     def evaluate(self, dataloader):
@@ -195,7 +195,7 @@ class Trainer:
         self.logger.info('best epoch:{}'.format(best_epoch))
         self.logger.info('best score:{}'.format(best_score))
 
-    def K_fold_train(self, n_splits=5, early_stop_patience=10):
+    def K_fold_train(self, n_splits=5, early_stop_patience=50):
 
         # data
         results = {}

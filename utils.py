@@ -14,6 +14,7 @@ import yaml
 from gensim.models import Word2Vec
 from tdc.multi_pred import bi_pred_dataset
 from torch_geometric.data import Batch
+import torch.nn.functional as F
 
 MB = 1024 ** 2
 GB = 1024 ** 3
@@ -29,6 +30,8 @@ def load_config(cfg_file):
 
 def read_csv(drug, protein, label, filename):
     df = pd.read_csv(filename)
+    df = df.groupby([drug, protein]).filter(lambda g: g[label].nunique() == 1)
+    df = df.drop_duplicates([drug, protein])
     out = [df[drug].tolist(), df[protein].tolist(), df[label].tolist()]
     return out
 
@@ -79,18 +82,27 @@ def interaction_dataset_load(name, path):
     file = os.path.join(path, name)
     df = pd.read_csv(file + '.csv')
     if name == 'Human':
+        group_cols = ['compound_iso_smiles', 'target_sequence']
+        df = df.groupby(group_cols).filter(lambda g: g['affinity'].nunique() == 1)
+        df = df.drop_duplicates(group_cols)
         entity1 = df['compound_iso_smiles']
         entity2 = df['target_sequence']
         raw_y = df['affinity']
         entity1_idx, unique1 = pd.factorize(entity1)
         entity2_idx, unique2 = pd.factorize(entity2)
     elif name == 'C.elegans':
+        group_cols = ['smile', 'protein']
+        df = df.groupby(group_cols).filter(lambda g: g['affinity'].nunique() == 1)
+        df = df.drop_duplicates(group_cols)
         entity1 = df['smile']
         entity2 = df['protein']
         raw_y = df['affinity']
         entity1_idx, unique1 = pd.factorize(entity1)
         entity2_idx, unique2 = pd.factorize(entity2)
     elif name == 'Drugbank':
+        group_cols = [ 'smile', 'protein']
+        df = df.groupby(group_cols).filter(lambda g: g['affinity'].nunique() == 1)
+        df = df.drop_duplicates(group_cols)
         entity1 = df['smile']
         entity2 = df['protein']
         raw_y = df['affinity']
@@ -116,6 +128,7 @@ class DTI_dataset(bi_pred_dataset.DataLoader):
         self.path = path
         self.log_flag = False
         self.two_types = False
+        self.augment_df = False
 
 
 def cuda(obj, *args, **kwargs):
@@ -145,7 +158,8 @@ def eval_func(eval_fn, target, output, type):
     if type == 'regression':
         return eval_fn(target, output.squeeze())
     elif type == 'classification':
-        return eval_fn(target, torch.argmax(output, dim=1))
+        proba_pos = F.softmax(output, dim=1)[:, 1]
+        return eval_fn(target, proba_pos)
 
 
 def model_size_in_bytes(model, only_trainable=False):

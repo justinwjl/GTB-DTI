@@ -89,6 +89,8 @@ class Evaluator:
             assert all(item in self.cla_metric for item in metrics), "Not all metrics exist"
         self.eval_funcs = []
         self.metrics = metrics
+        if self.task.lower() == "classification":
+            self.metrics = ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
         for metric in self.metrics:
             self.eval_funcs.append(self.assign_evaluator(metric))
 
@@ -158,7 +160,7 @@ class Evaluator:
             elif metric_name in ["rp@k", "pr@k"]:
                 out_dict[metric_name] = eval_func(y_true, y_pred, threshold=threshold)
                 continue
-            elif metric_name == "Spearman":
+            elif metric_name.lower() == "spearman":
                 out_dict[metric_name] = eval_func(y_true, y_pred)[0]
                 continue
             out_dict[metric_name] = eval_func(y_true, y_pred)
