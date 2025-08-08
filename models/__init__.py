@@ -16,10 +16,10 @@ from .IIFDTI import IIFDTI
 from .MRBDTA import MRBDTA
 from .AMMVF import AMMVF
 from .DrugBAN import DrugBAN
-from .PGraphDTA import PGraphDTA_CNN, PGraphDTA_PLM
 from .BridgeDTI import BridgeDTI
 from .SubMDTA import SubMDTA
 from .IMAEN import IMAEN
 from .ColdDTA import ColdDTA
 from .FOTFCPI import FOTFCPI
 from .TDGraphDTA import TDGraphDTA
+from .MATDTI import MATDTI7

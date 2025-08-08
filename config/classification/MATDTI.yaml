@@ -1,13 +1,13 @@
 output_dir: ./experiment/
 
 dataset:
-  class: DAVIS
+  class: Human
   path: ./data/
   split: random
   threshold: 30
 
 task:
-  class: regression
+  class: classification
   model:
     class: MATDTI7
     param:
@@ -23,10 +23,10 @@ optimizer:
 
 engine:
   device: [0]
-  batch_size: 128
+  batch_size: 64
 
 train:
   num_epoch: 1000
 
-eval_metric: ['mse', 'rmse', 'mae', 'r2', 'pcc', 'ci','spearman']
-score_metric: mse
+eval_metric: ['roc-auc', 'pr-auc', 'range_logAUC', 'accuracy', 'precision', 'recall', 'f1']
+score_metric: f1
