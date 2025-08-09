@@ -1,6 +1,6 @@
-# Benchmark on Drug Target Interaction Modeling from a Structure Perspective
+# Benchmark on Drug Target Interaction Modeling from a Drug Structure Perspective
 
-This is the official codebase of the paper [Benchmark on Drug Target Interaction Modeling from a Structure Perspective](https://arxiv.org/pdf/2407.04055v1).
+This is the official codebase of the paper [Benchmark on Drug Target Interaction Modeling from a Drug Structure Perspective](https://arxiv.org/pdf/2407.04055v1).
 
 GTB-DTI is a comprehensive benchmark customized for GNN and
 Transformer-based methodologies for DTI prediction.
@@ -33,18 +33,6 @@ task:
   train: memory_test
 ```
 
-
-## Benchmark Result
-### Benchmark of Regression task
-![Performance compriason of regression task](fig/regression_result.png)
-
-![Performance compriason of regression task](fig/time_davis_regression.png)
-
-### Benchmark of Classification task
-![Performance compriason of of regression task](fig/classification_result.png)
-
-![Performance compriason of regression task](fig/time_human_classification.png)
-
 ## License
 This codebase is released under the MIT License as in the [LICENSE](LICENSE) file.
 
@@ -53,7 +41,7 @@ If you find this paper or code helpful in your research, please cite the followi
 
 ```
 @misc{zhang2024benchmarkdrugtargetinteraction,
-      title={Benchmark on Drug Target Interaction Modeling from a Structure Perspective}, 
+      title={Benchmark on Drug Target Interaction Modeling from a Drug Structure Perspective}, 
       author={Xinnan Zhang and Jialin Wu and Junyi Xie and Tianlong Chen and Kaixiong Zhou},
       year={2024},
       eprint={2407.04055},
