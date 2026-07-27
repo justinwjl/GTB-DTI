@@ -12,7 +12,7 @@ import os
 from sklearn.model_selection import KFold
 from featurize import get_featurizer
 from utils import *
-import re, json
+import json
 from collections import defaultdict
 from torch.optim.optimizer import Optimizer
 import torch.optim.lr_scheduler as lr_scheduler
@@ -270,8 +270,9 @@ class Trainer:
 
         df_results = pd.DataFrame(results)
         if self.task == 'regression':
-            df_results.iloc[-1] = df_results.iloc[-1].apply(lambda x: ''.join(re.findall(r'[0-9.]+', str(x)[:40])))
-            df_results = df_results.map(lambda x: pd.to_numeric(x, errors='coerce'))
+            numeric_results = df_results.apply(pd.to_numeric, errors='coerce')
+        else:
+            numeric_results = df_results.copy(deep=True)
 
         # exit_epoch_series = pd.Series({fold: int(exit_epoch_info.get(fold, 0)) for fold in results.keys()})
         # best_epoch_series = pd.Series({fold: int(best_epoch_info.get(fold, 0)) for fold in results.keys()})
@@ -279,7 +280,7 @@ class Trainer:
         best_epoch_series = pd.Series({fold: best_epoch_info.get(fold, 0) for fold in results.keys()})
         df_results = pd.concat([df_results, exit_epoch_series.to_frame().T, best_epoch_series.to_frame().T])
 
-        numeric_data = df_results.copy(deep=True)
+        numeric_data = pd.concat([numeric_results, exit_epoch_series.to_frame().T, best_epoch_series.to_frame().T])
         df_results['mean'] = numeric_data.mean(axis=1)
         df_results['std'] = numeric_data.std(axis=1, ddof=1)
         df_results.to_csv(os.path.join(self.model_path, 'results.csv'), index=False)
