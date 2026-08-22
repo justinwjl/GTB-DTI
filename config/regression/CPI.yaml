@@ -27,13 +27,16 @@ optimizer:
   class: Adam
   lr: 0.001
   scheduler: True
-  step_size: 10
+  # Upstream halves the lr every 10 epochs over a 99-epoch run (run_training.py:212-217), so it
+  # decays 9 times. Rescaled so the same 9 decays span this benchmark's 1000-epoch budget.
+  step_size: 110
   gamma: 0.5
   weight_decay: 1.0e-6
 
 engine:
   device: [0]
-  batch_size: 1
+  # The recipe prescribes 1 (CPI paper: "Note that the batch size is 1"; GanDTI Sec 2.3: "with a batch size of 1"), but 1 would put a single model-dataset pair beyond 1e8 sequential updates under the 1000-epoch five-fold protocol, none of them filling the GPU.
+  batch_size: 32
 
 train:
   num_epoch: 1000

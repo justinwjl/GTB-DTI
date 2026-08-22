@@ -11,7 +11,8 @@ task:
   model:
     class: ColdDTA
     param:
-      dropout: 0.1
+      # ColdDTA has no dropout. 
+      dropout: 0
   train: kfold
   
 optimizer:

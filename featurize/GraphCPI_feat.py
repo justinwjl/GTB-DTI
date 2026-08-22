@@ -178,7 +178,7 @@ class GraphCPI_featurize:
         prot_split = [self.seq_to_kmers(protein, ngram=self.ngram) for protein in proteins]
         tokenizer = text.Tokenizer(num_words=10000, lower=False, filters=" ")
         tokenizer.fit_on_texts(prot_split)
-        protein_ = sequence.pad_sequences(tokenizer.texts_to_sequences(prot_split), maxlen=self.max_prot_len, padding='post')
+        protein_ = sequence.pad_sequences(tokenizer.texts_to_sequences(prot_split), maxlen=self.max_prot_len, padding='post', truncating='post')
 
         word_index = tokenizer.word_index
         nb_words = len(word_index)
@@ -192,10 +192,10 @@ class GraphCPI_featurize:
         saved_path = os.path.join(self.root, name, f"word2vec_{self.ngram}_{self.vector_size}d.model")
         
         
-        w2v_model = w2v_train(saved_path, proteins, ngram=self.ngram)
+        w2v_model = w2v_train(saved_path, proteins, ngram=self.ngram, vector_size=self.vector_size)
         embedding_matrix = np.zeros((nb_words + 1, self.vector_size))
         for word, i in word_index.items():
-            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv.index2word else None
+            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv else None
             if embedding_glove_vector is not None:
                 embedding_matrix[i] = embedding_glove_vector
             else:

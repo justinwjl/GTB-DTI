@@ -13,6 +13,13 @@ import numpy as np
 import pandas as pd
 import pickle
 
+
+def masked_mean(x, mask):
+    """Mean over dim=1 ignoring padded slots. x: [B, L, D], mask: [B, L] with 1 = real token."""
+    m = mask.unsqueeze(-1).to(x.dtype)
+    return (x * m).sum(dim=1) / m.sum(dim=1)
+
+
 class SelfAttention(nn.Module):
     def __init__(self, hid_dim, n_heads, dropout):
         super().__init__()
@@ -45,8 +52,6 @@ class SelfAttention(nn.Module):
         K = K.view(bsz, -1, self.n_heads, self.hid_dim // self.n_heads).permute(0, 2, 1, 3)
         V = V.view(bsz, -1, self.n_heads, self.hid_dim // self.n_heads).permute(0, 2, 1, 3)
         energy = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale.to(query.device)
-        Q, K = Q.cpu(), K.cpu()
-        del Q, K
 
         if mask is not None:
             mask_expanded = mask[:, np.newaxis, np.newaxis, :]
@@ -165,8 +170,6 @@ class DecoderLayer(nn.Module):
         src1 = self.ln(src + self.do(self.sa(src, src, src, src_mask)))
         src1 = self.ln(src1 + self.do(self.ea(src1, trg, trg, trg_mask)))
         src1 = self.ln(src1 + self.do(self.pf(src1)))
-        trg,src= trg.cpu(),src.cpu()
-        del trg,src, trg_mask, src_mask
 
         # m1 = torch.mean(trg1, 1)
         # trg1 = torch.unsqueeze(m1, 1)
@@ -333,7 +336,7 @@ class GAT(nn.Module):
             zero_vec = -9e15 * torch.ones_like(e)
             attention = torch.where(adj > 0, e, zero_vec)  # 保证softmax 不为 0
             attention = F.softmax(attention, dim=2)
-            attention = F.dropout(attention, self.dropout)
+            attention = F.dropout(attention, self.dropout, training=self.training)
             h_prime = torch.matmul(attention, h)
             x = x+h_prime   # (1,78,34)
 
@@ -477,7 +480,7 @@ class InteractionModel(nn.Module):
 
         self.hid_dim = hid_dim
 
-    def forward(self, compound_features, protein_features):
+    def forward(self, compound_features, protein_features, compound_mask, protein_mask):
         compound_embedded = self.activation(compound_features)
         protein_embedded = self.activation(protein_features)
 
@@ -493,9 +496,11 @@ class InteractionModel(nn.Module):
         
         '''
 
+        # key_padding_mask marks the positions to IGNORE, so it is the negation of our masks
         compound_attention_output, _ = self.compound_attention(compound_embedded, compound_embedded,
-                                                               compound_embedded)
-        protein_attention_output, _ = self.protein_attention(protein_embedded, protein_embedded, protein_embedded)
+                                                               compound_embedded, key_padding_mask=compound_mask == 0)
+        protein_attention_output, _ = self.protein_attention(protein_embedded, protein_embedded, protein_embedded,
+                                                             key_padding_mask=protein_mask == 0)
 
         compound_attention_output = compound_attention_output.permute(1, 0, 2)
         protein_attention_output = protein_attention_output.permute(1, 0, 2)
@@ -503,9 +508,9 @@ class InteractionModel(nn.Module):
         compound_output = self.activation(self.compound_fc(compound_attention_output))
         protein_output = self.activation(self.protein_fc(protein_attention_output))
 
-        com_att = torch.unsqueeze(torch.mean(compound_output,1),1)
-        pro_att = torch.unsqueeze(torch.mean(protein_output,1),1)
-        return com_att,pro_att
+        com_att = torch.unsqueeze(masked_mean(compound_output, compound_mask), 1)
+        pro_att = torch.unsqueeze(masked_mean(protein_output, protein_mask), 1)
+        return com_att, pro_att
 
 
         # 对mean使用权重参数矩阵
@@ -660,7 +665,7 @@ class AMMVF(nn.Module):
 
         protein2 = self.Bert(protein)                     # protein2:(1,806,64)  # [batch size, protein len, hid dim]
 
-        com_att,pro_att = self.inter_att(compound2, protein2)
+        com_att, pro_att = self.inter_att(compound2, protein2, compound2_mask, prot_mask)
 
         scores = self.tensor_network(com_att, pro_att)
 

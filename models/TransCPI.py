@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-import numpy as np
 import pandas as pd
 
 class SelfAttention(nn.Module):
@@ -42,12 +41,11 @@ class SelfAttention(nn.Module):
         # K, V = [batch size, n heads, sent len_K, hid dim // n heads]
         # Q = [batch size, n heads, sent len_q, hid dim // n heads]
         energy = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale.to(query.device)
-        mask_expanded = mask[:, np.newaxis, np.newaxis, :]
-        mask_expanded = mask_expanded.repeat(1, energy.shape[1], energy.shape[2], 1)  # 第二维
 
         # energy = [batch size, n heads, sent len_Q, sent len_K]
         if mask is not None:
-            energy = energy.masked_fill(mask_expanded == 0, -1e10)
+            # Mask the key axis; broadcasting avoids materialising a mask the size of energy
+            energy = energy.masked_fill(mask[:, None, None, :] == 0, -1e10)
 
         attention = self.do(F.softmax(energy, dim=-1))
 
@@ -218,10 +216,11 @@ class Decoder(nn.Module):
         """Use norm to determine which atom is significant. """
         norm = torch.norm(trg,dim=2)
         # norm = [batch size,compound len]
+        # trg is padded to a fixed 100 atoms, so the softmax must not spend weight on pad slots
+        if trg_mask is not None:
+            norm = norm.masked_fill(trg_mask == 0, -1e10)
         norm = F.softmax(norm,dim=1)
         # norm = [batch size,compound len]
-        trg = torch.squeeze(trg,dim=0)
-        norm = torch.squeeze(norm,dim=0)
         # sum = torch.zeros((self.hid_dim)).to(device)
         # for i in range(norm.shape[0]):
         #     v = trg[i,]

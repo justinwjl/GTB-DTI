@@ -26,6 +26,9 @@ optimizer:
   class: AdamW
   lr: 0.001
   weight_decay: 1.0e-6
+  no_decay_on_bias: True     # upstream puts bias params in a weight_decay=0 group
+  scheduler: cosine_warmup   # upstream: get_cosine_schedule_with_warmup, stepped per batch
+  warmup_steps: 10
 
 engine:
   device: [0]

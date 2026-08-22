@@ -5,7 +5,6 @@ import torch_geometric
 from torch_geometric.nn import GCNConv, GATConv, GINConv
 from torch_geometric.nn import global_mean_pool as gap, global_max_pool as gmp, global_add_pool
 from torchdrug.layers import MLP
-import esm
 
 __all__ = [
     'GAT_GCN',

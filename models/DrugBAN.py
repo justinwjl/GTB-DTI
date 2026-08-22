@@ -222,7 +222,10 @@ class RandomLayer(nn.Module):
 
 
 class BANLayer(nn.Module):
-    def __init__(self, v_dim, q_dim, h_dim, h_out, act='ReLU', dropout=0.1, k=3):
+    # Upstream ban.py:7 defaults dropout to 0.2 and DrugBAN.py:33 builds BANLayer without passing
+    # one, so this default is the value that actually trains. The paper's Table 6 enumerates every
+    # hyperparameter and has no dropout row, so the code is the only source.
+    def __init__(self, v_dim, q_dim, h_dim, h_out, act='ReLU', dropout=0.2, k=3):
         super(BANLayer, self).__init__()
 
         self.c = 32

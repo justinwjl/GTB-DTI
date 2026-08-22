@@ -8,7 +8,7 @@ from torch_geometric.data import Data
 
 
 class MolTrans_featurize:
-    def __init__(self, max_prot_len=545, max_smile_len=50):
+    def __init__(self, max_prot_len=545, max_smile_len=50, **config):
         self.feat_name = 'MolTrans'
         vocab_path = 'featurize/MolTrans_encoding/protein_codes_uniprot.txt'
         bpe_codes_protein = codecs.open(vocab_path)

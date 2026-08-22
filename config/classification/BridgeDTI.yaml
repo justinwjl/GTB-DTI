@@ -30,7 +30,10 @@ param_feature:
 
 optimizer:
   class: Adam
-  lr: 0.001
+  lr: 0.001            # paper: "The Adam optimizer with learning rate 0.001 is used"
+  # Paper Eq.11 penalises lambda * sum ||theta||^2 with lambda = 0.001 and NO 1/2 factor while PyTorch weight_decay=w adds w*theta, so w = 2*lambda.
+  weight_decay: 0.002
+  clip_grad_norm: 20   # upstream DL_ClassifierModel.py:257, clip_grad_norm_(max_norm=20)
 
 engine:
   device: [0]

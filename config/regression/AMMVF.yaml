@@ -31,9 +31,7 @@ param_feature:
 optimizer:
   class: Adam
   lr: 0.001
-  scheduler: True
-  step_size: 5
-  gamma: 0.5
+  scheduler: False   # upstream trains at a constant lr 1e-3; its decay block is commented out
   weight_decay: 1.0e-4
 
 engine:

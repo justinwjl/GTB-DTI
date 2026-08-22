@@ -20,7 +20,10 @@ optimizer:
 
 engine:
   device: [0]
-  batch_size: 256
+  # The paper states no batch size (Sec 4.1 gives only the 8:1:1 split), so the code decides.
+  # Its --batch_size default of 256 is dead: train.py:73-74 build both DataLoaders with a literal
+  # batch_size=512, so 512 is what every published CSDTI number was trained at.
+  batch_size: 512
 
 train:
   num_epoch: 1000

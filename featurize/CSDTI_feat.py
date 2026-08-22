@@ -16,7 +16,7 @@ chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(fdef_name)
 
 
 class CSDTI_featurize:
-    def __init__(self):
+    def __init__(self, max_prot_len=1200, **config):
         self.feat_name = 'CSDTI'
         self.protein_vocab = {"A": 1, "C": 2, "B": 3, "E": 4, "D": 5, "G": 6,
                               "F": 7, "I": 8, "H": 9, "K": 10, "M": 11, "L": 12,
@@ -24,7 +24,7 @@ class CSDTI_featurize:
                               "U": 19, "T": 20, "W": 21,
                               "V": 22, "Y": 23, "X": 24,
                               "Z": 25}
-        self.max_prot_len=1200
+        self.max_prot_len = max_prot_len
         
 
     def protein_encoding(self, prot):

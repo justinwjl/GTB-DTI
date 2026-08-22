@@ -1,9 +1,11 @@
 """
 Provides some tools
 """
+import hashlib
 import logging
 import os
 import pickle
+from collections import defaultdict
 import time
 import easydict
 import numpy as np
@@ -18,6 +20,12 @@ import torch.nn.functional as F
 
 MB = 1024 ** 2
 GB = 1024 ** 3
+
+# Labels in nM, the only ones the -log10 transform applies to. KIBA is absent on purpose: its label
+# is an integrated score in [0, 17.2], not a dissociation constant.
+NM_AFFINITY_DATASETS = {
+    'davis', 'bindingdb_kd', 'bindingdb_ki', 'bindingdb_ic50', 'bindingdb_patent',
+}
 
 
 def load_config(cfg_file):
@@ -59,10 +67,15 @@ def load_data(split_types=('train', 'val', 'test'), load_from_tdc=False, cfg=Non
             data = DTI_dataset(name=cfg['class'], path=cfg['path'])
         else:
             data = DTI(name=cfg['class'], path=cfg['path'])
+            is_nm_affinity = cfg['class'].lower() in NM_AFFINITY_DATASETS
+            # harmonize takes the group min while log_flag is False and the max once it is True; only for nM labels is the min the strongest binder
+            if not is_nm_affinity:
+                data.log_flag = True
             data.harmonize_affinities(mode='max_affinity')
+            data.log_flag = False
             if task == 'classification':
                 data.binarize(threshold=cfg['threshold'])
-            else:
+            elif is_nm_affinity:
                 data.convert_to_log(form='binding')
         split_file = os.path.join(cfg['path'], cfg['class'], task + '_' + cfg['split'] + '_' + str(seed))
         if not os.path.exists(split_file):
@@ -149,17 +162,73 @@ def cuda(obj, *args, **kwargs):
 
 def loss_cal(loss_fn, output, target, type):
     if type == 'regression':
-        return loss_fn(output.squeeze(), target)
+        # squeeze() would collapse a single-sample [1, 1] output to 0-d and broadcast
+        return loss_fn(output.reshape(-1), target)
     elif type == 'classification':
         return loss_fn(output, target.long())  # )   #
 
 
 def eval_func(eval_fn, target, output, type):
     if type == 'regression':
-        return eval_fn(target, output.squeeze())
+        return eval_fn(target, output.reshape(-1))
     elif type == 'classification':
         proba_pos = F.softmax(output, dim=1)[:, 1]
         return eval_fn(target, proba_pos)
+
+
+class Lookahead(torch.optim.Optimizer):
+    """Lookahead (Zhang et al., 2019), transcribed from TransformerCPI's lookahead.py."""
+
+    def __init__(self, optimizer, k=5, alpha=0.5):
+        super().__init__(optimizer.param_groups, optimizer.defaults)
+
+        self.param_groups = optimizer.param_groups
+        self.defaults = optimizer.defaults
+        self.state = defaultdict(dict)
+        self.optimizer = optimizer
+        self.k = k
+        self.alpha = alpha
+        for group in self.param_groups:
+            group['counter'] = 0
+
+    def zero_grad(self, set_to_none=True):
+        self.optimizer.zero_grad(set_to_none=set_to_none)
+
+    def update(self, group):
+        for fast in group['params']:
+            param_state = self.state[fast]
+            if 'slow_param' not in param_state:
+                param_state['slow_param'] = torch.zeros_like(fast.data)
+                param_state['slow_param'].copy_(fast.data)
+            slow = param_state['slow_param']
+            slow += (fast.data - slow) * self.alpha
+            fast.data.copy_(slow)
+
+    def step(self, closure=None):
+        loss = self.optimizer.step(closure)
+        for group in self.param_groups:
+            if group['counter'] == 0:
+                self.update(group)
+            group['counter'] += 1
+            if group['counter'] >= self.k:
+                group['counter'] = 0
+        return loss
+
+    def state_dict(self):
+        # Both optimizers share param_groups, so the base class indexes the
+        # slow and the fast state the same way; one group list covers both
+        slow_state_dict = super().state_dict()
+        return {'slow_state': slow_state_dict['state'],
+                'fast_state': self.optimizer.state_dict()['state'],
+                'param_groups': slow_state_dict['param_groups']}
+
+    def load_state_dict(self, state_dict):
+        param_groups = state_dict['param_groups']
+        super().load_state_dict({'state': state_dict['slow_state'],
+                                 'param_groups': param_groups})
+        self.optimizer.load_state_dict({'state': state_dict['fast_state'],
+                                        'param_groups': param_groups})
+        self.param_groups = self.optimizer.param_groups
 
 
 def model_size_in_bytes(model, only_trainable=False):
@@ -204,12 +273,19 @@ class Corpus(object):
             yield ['<pad>']
 
 
-def w2v_train(saved_path, sent_list, ngram, padding_train=False):
+def stable_hash(value):
+    # gensim seeds each word vector with hash(); CPython salts str hashing per process
+    return int(hashlib.md5(str(value).encode('utf-8')).hexdigest(), 16)
+
+
+def w2v_train(saved_path, sent_list, ngram, padding_train=False, vector_size=100, seed=42):
     if os.path.exists(saved_path):
         model = Word2Vec.load(saved_path)
     else:
         sent_corpus = Corpus(prot=sent_list, ngram=ngram, pad=padding_train)
-        model = Word2Vec(window=5, min_count=1, workers=6)
+        # workers=1 as well as the seed: multi-worker training is not reproducible
+        model = Word2Vec(vector_size=vector_size, window=5, min_count=1, workers=1,
+                         seed=seed, hashfxn=stable_hash)
         model.build_vocab(sent_corpus)
         model.train(sent_corpus, epochs=30, total_examples=model.corpus_count)
         model.save(saved_path)

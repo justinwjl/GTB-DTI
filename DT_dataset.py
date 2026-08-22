@@ -7,9 +7,10 @@ import pandas as pd
 
 class DT_dataset(InMemoryDataset):
 
-    def __init__(self, root='data', featurizer=None, data=None, split='train', transform=None, pre_transform=None):
+    def __init__(self, root='data', featurizer=None, data=None, split='train'):
 
-        super(DT_dataset, self).__init__(root, transform, pre_transform)
+        # __getitem__ is fully overridden below, so PyG's transform/pre_transform hooks never fire
+        super(DT_dataset, self).__init__(root)
 
         self.data = data
         self.data_type_list = ['train', 'valid', 'test', 'kfold']
@@ -108,12 +109,6 @@ class DT_dataset(InMemoryDataset):
                 else:
                     batched_data['test'][i].append(item[i])
 
-        if self.transform is not None:
-            data_list = [data for data in data_list if self.pre_filter(data)]
-        if self.pre_transform is not None:
-            data_list = [self.pre_transform(data) for data in data_list]
-
-
         collated_data = {}
         for data_type in self.data_type_list:
             collated_data[data_type] = [self.collate(sample) for sample in batched_data[data_type]]
@@ -133,9 +128,6 @@ class DT_dataset(InMemoryDataset):
                 saved_slice[data_type].append(slice_tmp)
 
             torch.save((saved_data[data_type], saved_slice[data_type]), self.processed_paths[idx])
-
-    def __repr__(self):
-        return '{}()'.format(self.name)
 
     def len(self):
         if self.slices_list is None:

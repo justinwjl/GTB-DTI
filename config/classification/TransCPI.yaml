@@ -13,12 +13,14 @@ task:
     param: 
       protein_dim: 100
       atom_dim: 34
+      # Values follow the paper's Table 2. models/TransCPI.py is the masked, batched architecture
+      # of the GPCR/Kinase/BindingDB branch, not the single-sample Human,C.elegans/model_glu.py,
       hid_dim: 64
       n_layers: 3
       n_heads: 8
-      pf_dim: 256
+      pf_dim: 256    # Table 2 reports 512, but every released folder hardcodes 256
       dropout: 0.2
-      kernel_size: 5
+      kernel_size: 7
 
   train: kfold
 
@@ -26,16 +28,25 @@ param_feature:
   ngram: 3
 
 optimizer:
+  # Paper: "we used the LookAhead optimizer combined with RAdam optimizer" (GPCR/model.py:393-395).
+  # The Human,C.elegans Trainer instead builds a plain Adam at lr 1e-3, which Table 2 overrides.
   class: RAdam
+  lookahead: True
+  lookahead_k: 5
+  lookahead_alpha: 0.5
   lr: 1.0e-4
-  scheduler: True
-  step_size: 5
-  gamma: 0.5
   weight_decay: 1.0e-4
+  scheduler: False        # GPCR/main.py:71 sets lr_decay = 1.0; the paper lists no schedule
+  no_decay_on_bias: True  # GPCR/model.py:393-394 puts the bias group at weight_decay 0
+  # Upstream's own RAdam decouples the decay AdamW-style (GPCR/Radam.py:76-77); torch.optim.RAdam
+  # needs this flag to match, which is why requirements.yaml pins torch >= 2.2.
+  decoupled_weight_decay: True
 
 engine:
   device: [0]
-  batch_size:   32
+  # Paper: batch size 8, gradients accumulated over eight batches (GPCR/model.py:413-424)
+  batch_size: 8
+  accumulation_steps: 8
 
 train:
   num_epoch: 1000

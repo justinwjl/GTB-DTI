@@ -179,10 +179,8 @@ class MRBDTA(nn.Module):
         enc_Drugs, enc_attnsD0, enc_attnsD1, enc_attnsD2 = self.encoderD(input_Drugs)
         enc_Tars, enc_attnsT0, enc_attnsT1, enc_attnsT2 = self.encoderT(input_Tars)
 
-        enc_Drugs_2D0 = torch.sum(enc_Drugs, dim=1)
-        enc_Drugs_2D1 = enc_Drugs_2D0.squeeze()
-        enc_Tars_2D0 = torch.sum(enc_Tars, dim=1)
-        enc_Tars_2D1 = enc_Tars_2D0.squeeze()
+        enc_Drugs_2D1 = torch.sum(enc_Drugs, dim=1)
+        enc_Tars_2D1 = torch.sum(enc_Tars, dim=1)
         #fc = enc_Drugs_2D1 + enc_Tars_2D1
         fc = torch.cat((enc_Drugs_2D1, enc_Tars_2D1), 1)
 

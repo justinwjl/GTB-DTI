@@ -90,7 +90,7 @@ class IIFDTI_featurize:
         prot_split = [self.seq_to_kmers(protein, ngram=self.ngram) for protein in proteins]
         tokenizer = text.Tokenizer(num_words=10000, lower=False, filters=" ")
         tokenizer.fit_on_texts(prot_split)
-        protein_ = sequence.pad_sequences(tokenizer.texts_to_sequences(prot_split), maxlen=self.prot_max_len, padding='post')
+        protein_ = sequence.pad_sequences(tokenizer.texts_to_sequences(prot_split), maxlen=self.prot_max_len, padding='post', truncating='post')
 
         word_index = tokenizer.word_index
         nb_words = len(word_index)
@@ -100,10 +100,10 @@ class IIFDTI_featurize:
             os.mkdir(os.path.join(self.root, self.feat_name))
         saved_path = os.path.join(self.root, self.feat_name, f"word2vec_{self.ngram}_{self.vector_size}d.model")
         
-        w2v_model = w2v_train(saved_path, proteins, ngram=self.ngram)
+        w2v_model = w2v_train(saved_path, proteins, ngram=self.ngram, vector_size=self.vector_size)
         embedding_matrix = np.zeros((nb_words + 1, self.vector_size))
         for word, i in word_index.items():
-            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv.index_to_key else None
+            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv else None
             if embedding_glove_vector is not None:
                 embedding_matrix[i] = embedding_glove_vector
             else:
@@ -125,7 +125,7 @@ class IIFDTI_featurize:
         smile_split = [self.seq_to_kmers(smile, ngram=1) for smile in smiles]
         tokenizer = text.Tokenizer(num_words=100, lower=False, filters=" ")
         tokenizer.fit_on_texts(smile_split)
-        smile_ = sequence.pad_sequences(tokenizer.texts_to_sequences(smile_split), maxlen=self.smile_max_len)
+        smile_ = sequence.pad_sequences(tokenizer.texts_to_sequences(smile_split), maxlen=self.smile_max_len, padding='post', truncating='post')
 
         word_index = tokenizer.word_index
         nb_words = len(word_index)
@@ -135,11 +135,11 @@ class IIFDTI_featurize:
             os.mkdir(os.path.join(self.root, self.feat_name))
         saved_path = os.path.join(self.root, self.feat_name, f"smile2vec_{1}_{self.vector_size}d.model")
         
-        w2v_model = w2v_train(saved_path, smiles, ngram=1)
+        w2v_model = w2v_train(saved_path, smiles, ngram=1, vector_size=self.vector_size)
         
         embedding_matrix = np.zeros((nb_words + 1, self.vector_size))
         for word, i in word_index.items():
-            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv.index_to_key else None
+            embedding_glove_vector=w2v_model.wv[word] if word in w2v_model.wv else None
             if embedding_glove_vector is not None:
                 embedding_matrix[i] = embedding_glove_vector
             else:

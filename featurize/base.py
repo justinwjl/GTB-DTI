@@ -106,8 +106,9 @@ def pad_or_truncate(input, max_len, pad_2d=False, return_mask=False):
             # Pad the input
             pad_len = max_len - len(input)
             if return_mask:
-                mask = np.ones(max_len)
-                mask[-pad_len:] = 0
+                # Mark the valid prefix: mask[-pad_len:] is mask[0:] when pad_len == 0
+                mask = np.zeros(max_len)
+                mask[:len(input)] = 1
             input = np.pad(input, (0, pad_len), mode='constant', constant_values=0)
     elif input.ndim == 2:
         # Handle 2D array
@@ -132,8 +133,8 @@ def pad_or_truncate(input, max_len, pad_2d=False, return_mask=False):
                 pad_width = ((0, pad_len_row), (0, 0))
                 input = np.pad(input, pad_width, mode='constant', constant_values=0)
                 if return_mask:
-                    mask = np.ones(max_len)
-                    mask[-pad_len_row:] = 0
+                    mask = np.zeros(max_len)
+                    mask[:max_len - pad_len_row] = 1
             else:
                 pad_len_col = max_len - input.shape[1]
 
@@ -141,10 +142,11 @@ def pad_or_truncate(input, max_len, pad_2d=False, return_mask=False):
                 
                 input = np.pad(input, pad_width, mode='constant', constant_values=0)
                 if pad_len_col < 0:
-                    input = input[:, max_len]
+                    input = input[:, :max_len]
                 if return_mask:
                     mask = np.ones((max_len, max_len))
-                    mask[-pad_len_row:, :] = 0
+                    if pad_len_row > 0:
+                        mask[-pad_len_row:, :] = 0
                     if pad_len_col > 0:
                         mask[:, -pad_len_col:] = 0
 

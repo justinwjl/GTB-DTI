@@ -105,7 +105,7 @@ class MolTransformer(nn.Sequential):
         i_v = torch.unsqueeze(i_v, 1)
         # print(i_v.shape)
 
-        i_v = functional.dropout(i_v, p=self.dropout_rate)
+        i_v = functional.dropout(i_v, p=self.dropout_rate, training=self.training)
 
         # f = self.icnn2(self.icnn1(i_v))
         f = self.icnn(i_v)

@@ -30,7 +30,13 @@ param_feature:
 
 optimizer:
   class: Adam
-  lr: 0.001
+  lr: 0.001            # paper: "The Adam optimizer with learning rate 0.001 is used"
+  weight_decay: 0.002
+  # Paper: "the L2 regularization coefficient lambda is set to 0.001". The released code defaults
+  # weightDecay to 0 and the README never overrides it, so this follows the paper over the code.
+  # Note Eq. 11 writes the penalty as lambda * sum ||theta||^2 with no 1/2, so a strict translation
+  # to PyTorch's coupled decay would be 2*lambda; we record the coefficient the paper states.
+  clip_grad_norm: 20   # upstream DL_ClassifierModel.py:257, clip_grad_norm_(max_norm=20)
 
 engine:
   device: [0]

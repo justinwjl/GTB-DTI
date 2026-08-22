@@ -12,7 +12,6 @@ import os
 import random
 import torch
 import torch_geometric
-import torchvision
 from train import Trainer
 import argparse
 import time
@@ -84,7 +83,7 @@ if __name__ == '__main__':
 
     if cfg.task['train'] == 'kfold':
         trainer.K_fold_train()
-    elif cfg.task['train'] == 'train_test':
-        trainer.train_test()
     elif cfg.task['train'] == 'memory_test':
         trainer.mem_speed_bench()
+    else:
+        raise ValueError(f"Unknown task.train mode: {cfg.task['train']!r} (expected 'kfold' or 'memory_test')")

@@ -3,7 +3,7 @@ from torch_geometric.data import Data
 from featurize.base import str2int
 
 class MRBDTA_featurize:
-    def __init__(self, max_prot_len=1000, max_drug_len=100):
+    def __init__(self, max_prot_len=1000, max_drug_len=100, **config):
         self.feat_name = 'MRBDTA'
         self.seq_dict = {"A": 1, "C": 2, "B": 3, "E": 4, "D": 5, "G": 6,
                          "F": 7, "I": 8, "H": 9, "K": 10, "M": 11, "L": 12,

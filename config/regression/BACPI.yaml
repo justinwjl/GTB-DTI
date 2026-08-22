@@ -31,8 +31,12 @@ optimizer:
   class: Adam
   lr: 5.0e-4
   scheduler: True
-  step_size: 10
+  # Upstream halves the lr once, at the midpoint of a 20-epoch run (main.py:58,61 --
+  # StepLR(step_size=10, gamma=0.5) over num_epochs=20). Rescaled to this benchmark's
+  # 1000-epoch budget so the single halving still lands at the midpoint.
+  step_size: 500
   gamma: 0.5
+  amsgrad: True   # main.py:57 -- Adam(..., weight_decay=0, amsgrad=True)
 
 engine:
   device: [0]

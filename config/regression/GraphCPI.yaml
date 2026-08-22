@@ -11,7 +11,12 @@ task:
   model:
     class: GraphCPI_GIN
     param:
-      dropout: 0.6 # GAT: 0.6, GCN: 0.5, GIN : 0.6
+      # Neither the BIBM paper nor its journal extension (Lin et al., IEEE/ACM TCBB 2023) reports a
+      # dropout rate, and the released repo never contained the model files its training.py imports.
+      # Those imports name models.gcn / gat / gat_gcn / ginconv -- GraphDTA's modules, which all
+      # default to 0.2 -- so 0.2 is the only rate traceable to GraphCPI's own release, and it keeps
+      # GraphCPI vs GraphDTA a contrast in protein encoding alone.
+      dropout: 0.2
   train: kfold
 
 param_feature:

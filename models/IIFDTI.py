@@ -6,6 +6,13 @@ import math
 import numpy as np
 import pandas as pd
 
+
+def masked_mean(x, mask):
+    """Mean over dim=1 ignoring padded slots. x: [B, L, D], mask: [B, L] with 1 = real token."""
+    m = mask.unsqueeze(-1).to(x.dtype)
+    return (x * m).sum(dim=1) / m.sum(dim=1).clamp(min=1.0)
+
+
 class SelfAttention(nn.Module):
     def __init__(self, hid_dim, n_heads, dropout):
         super().__init__()
@@ -238,7 +245,8 @@ class IIFDTI(nn.Module):
     # prot_ids = [bs, prot_len]
     def forward(self, data):
         data = data[0]
-        compound, adj, protein, smi_ids, prot_ids = data.x, data.adj, data.prot_ids, data.smile, data.prot_ngram 
+        compound, adj, protein, smi_ids, prot_ids = data.x, data.adj, data.prot_ids, data.smile, data.prot_ngram
+        cmp_mask = data.x_mask
         cmp_gnn_out = self.gnn(compound.float(), adj)   # [bs, new_len, hid_dim]
         pro_textcnn_out = self.prot_textcnn(self.prot_embed2(protein)) # [bs, prot_len, hid_dim]
 
@@ -251,16 +259,10 @@ class IIFDTI(nn.Module):
         out_enc_smi = self.enc_smi(self.smi_embed(smi_ids))  # [bs, smi_len, hid_dim]
         out_dec_prot = self.dec_prot(self.prot_embed(prot_ids), out_enc_smi, prot_mask.unsqueeze(1).unsqueeze(3), smi_mask.unsqueeze(1).unsqueeze(2)) # # [bs, prot_len, hid_dim]
 
-        is_max = False
-        if is_max:
-            cmp_gnn_out = cmp_gnn_out.max(dim=1)[0]
-            if pro_textcnn_out.ndim>=3: pro_textcnn_out = pro_textcnn_out.max(dim=1)[0]
-            out_dec_smi = out_dec_smi.max(dim=1)[0]
-            out_dec_prot = out_dec_prot.max(dim=1)[0]
-        else:
-            cmp_gnn_out = cmp_gnn_out.mean(dim=1)
-            if pro_textcnn_out.ndim>=3: pro_textcnn_out = pro_textcnn_out.mean(dim=1)
-            out_dec_smi = out_dec_smi.mean(dim=1)
-            out_dec_prot = out_dec_prot.mean(dim=1)
+        # Inputs are padded to fixed lengths, so an unmasked mean divides the real signal by the
+        # padded length. pro_textcnn_out is already [bs, hid_dim] because TextCNN max-pools inside.
+        cmp_gnn_out = masked_mean(cmp_gnn_out, cmp_mask)
+        out_dec_smi = masked_mean(out_dec_smi, smi_mask)
+        out_dec_prot = masked_mean(out_dec_prot, prot_mask)
         out_fc = torch.cat([cmp_gnn_out, pro_textcnn_out, out_dec_smi, out_dec_prot], dim=-1)
         return self.out(out_fc)

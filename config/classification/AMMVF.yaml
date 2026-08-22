@@ -9,30 +9,34 @@ dataset:
 task:
   class: classification
   model:
-    class: IIFDTI
-    param: 
+    class: AMMVF
+    param:
+      protein_dim: 100
+      atom_dim: 34
       hid_dim: 64
       n_layers: 3
-      kernel_size: 9
       n_heads: 8
+      gat_heads: 3
+      alpha: 0.2
+      k_feature: 16
+      k_dim: 16
       pf_dim: 256
-      dropout: 0.2
+      dropout: 0.1
   train: kfold
 
 param_feature:
+  radius: 2
   ngram: 3
 
 optimizer:
-  class: AdamW
+  class: Adam
   lr: 0.001
-  weight_decay: 1.0e-6
-  no_decay_on_bias: True     # upstream puts bias params in a weight_decay=0 group
-  scheduler: cosine_warmup   # upstream: get_cosine_schedule_with_warmup, stepped per batch
-  warmup_steps: 10
+  scheduler: False   # upstream trains at a constant lr 1e-3; its decay block is commented out
+  weight_decay: 1.0e-4
 
 engine:
   device: [0]
-  batch_size: 64
+  batch_size: 32
 
 train:
   num_epoch: 1000

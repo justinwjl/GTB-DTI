@@ -9,7 +9,7 @@ from torch_geometric.data import Data
 from featurize.base import str2int, one_of_k_encoding, one_of_k_encoding_unk
 
 class coldDTA_featurize:
-    def __init__(self, max_prot_len=1200):
+    def __init__(self, max_prot_len=1200, **config):
         self.feat_name = 'coldDTA'
         self.seq_dict = {"A": 1, "C": 2, "B": 3, "E": 4, "D": 5, "G": 6,
                          "F": 7, "I": 8, "H": 9, "K": 10, "M": 11, "L": 12,

@@ -25,6 +25,9 @@ optimizer:
   class: Adam
   lr: 0.001
   weight_decay: 1.0e-6
+  # The paper says only "Adam optimizer is used with the learning rate of 0.001 and the weight
+  # decay of 10^-6"; amsgrad comes from the code, main.py:119-120.
+  amsgrad: True
 
 engine:
   device: [0]

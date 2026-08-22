@@ -25,19 +25,19 @@ def get_featurizer(name, **config):
                 'GCNNet_pretrain', 'IMAEN', 'TDGraphDTA']:
         return GraphDTA_featurize(**config)
     elif name in ['MolTransformer', 'FOTFCPI']:
-        return MolTrans_featurize()
+        return MolTrans_featurize(**config)
     elif name in ['MGraphDTA']:
-        return MGraph_featurize()
+        return MGraph_featurize(**config)
     elif name in ['ColdDTA']:
-        return coldDTA_featurize()
+        return coldDTA_featurize(**config)
     elif name in ['CPINet', 'GanDTI']:
         return CPI_featurize(**config)
     elif name in ['CSDTI']:
-        return CSDTI_featurize()
+        return CSDTI_featurize(**config)
     elif name in ['BridgeDTI']:
-        return BridgeDTI_featurize()
+        return BridgeDTI_featurize(**config)
     elif name in ['EmbedDTI_Ori', 'EmbedDTI_Attn']:
-        return EmbedDTI_featurize()
+        return EmbedDTI_featurize(**config)
     elif name in ['BACPI']:
         return BACPI_featurize(**config)
     elif name in ['TransCPI']:
@@ -49,14 +49,14 @@ def get_featurizer(name, **config):
     elif name in ['IIFDTI']:
         return IIFDTI_featurize(**config)
     elif name in ['MRBDTA']:
-        return MRBDTA_featurize()
+        return MRBDTA_featurize(**config)
     elif name in ['AMMVF']:
         return AMMVF_featurize(**config)
     elif name in ['DrugBAN']:
-        return DrugBAN_featurize()
+        return DrugBAN_featurize(**config)
     elif name in ['MATDTI7']:
-        return our3_featurize()
+        return our3_featurize(**config)
     elif name in ['SubMDTA']:
         return SubMDTA_featurize(**config)
     else:
-        print('Wrong Name!')
+        raise ValueError(f"No featurizer registered for model {name!r}")

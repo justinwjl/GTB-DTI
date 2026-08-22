@@ -92,12 +92,6 @@ class FOTFCPI(nn.Sequential):
         p_encoded_layers = self.p_encoder(p_emb.float(), ex_p_mask.float())
         # print("p_encode:", p_encoded_layers.shape)
 
-        # repeat to have the same tensor size for aggregation
-        d_aug = torch.unsqueeze(d_encoded_layers, 2).repeat(1, 1, self.max_p, 1)  # repeat along protein size
-        # print(d_aug.shape)
-        p_aug = torch.unsqueeze(p_encoded_layers, 1).repeat(1, self.max_d, 1, 1)  # repeat along drug size
-        # print(p_aug.shape)
-
         affinity_matrix = torch.matmul(d_encoded_layers, p_encoded_layers.transpose(-1, -2))
 
         affinity_scores = affinity_matrix / math.sqrt(12)

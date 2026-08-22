@@ -4,7 +4,10 @@ import pickle
 
 
 class CPINet(nn.Module):
-    def __init__(self, n_output, dim, layer_gnn, side, layer_cnn, layer_out, dropout=0.1, **config):
+    # dropout defaults to 0 because the original model has none: the paper never uses the word
+    # (its hyperparameter list in Sec 6.1 runs radius, n-gram, window, dimensionality, GNN and CNN
+    # depth, and the regularization lambda), and run_training.py has no dropout either.
+    def __init__(self, n_output, dim, layer_gnn, side, layer_cnn, layer_out, dropout=0, **config):
         super(CPINet, self).__init__()
         
         atom_dict = pickle.load(open(config['feat_root'] + '/atom_dict', 'rb'))

@@ -75,7 +75,7 @@ class BridgeDTI_featurize:
             if drug not in self.d2id:
                 mol = Chem.MolFromSmiles(drug)
                 if mol is None:
-                    continue
+                    raise ValueError(f"RDKit could not parse SMILES {drug!r}")
                 dSeqData.append([a.GetSymbol() for a in mol.GetAtoms()])
                 dMolData.append(mol)
                 dFeaData.append([self.atom_features(a) for a in mol.GetAtoms()])

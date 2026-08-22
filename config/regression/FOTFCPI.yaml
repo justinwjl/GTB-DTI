@@ -31,7 +31,7 @@ task:
   
 optimizer:
   class: Adam
-  lr: 1e-4
+  lr: 1.0e-4
 
 engine:
   device: [0]

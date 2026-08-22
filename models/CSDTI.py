@@ -131,7 +131,7 @@ class AttentionBlock(nn.Module):
 # main model
 class CSDTI(torch.nn.Module):
     def __init__(self, n_output, num_features_xd=22, num_features_xt=25,
-                 n_filters=32, embed_dim=512, output_dim=128, dropout=0.1, n_layers=4, kernel_size=3, mlp_dropout=0.5, **config):
+                 n_filters=32, embed_dim=512, output_dim=128, dropout=0.2, n_layers=4, kernel_size=3, mlp_dropout=0.5, **config):
         super(CSDTI, self).__init__()
         self.n_filters = n_filters
         dim = 32
@@ -163,20 +163,24 @@ class CSDTI(torch.nn.Module):
         # cross attention
         self.att = AttentionBlock(128, 1, 0.2)
 
-        # output
+        # output. Hardcoded exactly as upstream does -- the constructor's dropout never reaches this
+        # block there either. The rate is upstream HEAD's: cccbd503 (2023-03-13) is the repo's last
+        # commit and predates publication, and it writes a bare nn.Dropout(), i.e. 0.5. The two
+        # earlier commits wrote nn.Dropout(0.2), which is what the rest of this file still uses
+        # (constructor default, the drug-branch F.dropout, AttentionBlock.
         self.fc = nn.Sequential(
             # nn.Linear(256, 1024),
             nn.Linear(128*3, 1024),
             nn.ReLU(),
-            nn.Dropout(0.1),
+            nn.Dropout(0.5),
 
             nn.Linear(1024, 1024),
             nn.ReLU(),
-            nn.Dropout(0.1),
+            nn.Dropout(0.5),
 
             nn.Linear(1024, 256),
             nn.ReLU(),
-            nn.Dropout(0.1),
+            nn.Dropout(0.5),
             nn.Linear(256, n_output)
         )
 
@@ -200,7 +204,7 @@ class CSDTI(torch.nn.Module):
         x = global_mean_pool(x12, data.batch)
 
         x = F.relu(self.fc1_xd(x))
-        x = F.dropout(x, p=0.1, training=self.training)
+        x = F.dropout(x, p=0.2, training=self.training)
 
         # protein
         embedded_xt = self.embedding_xt(target)

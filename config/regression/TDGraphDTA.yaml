@@ -1,7 +1,7 @@
 output_dir: ./experiment/
 
 dataset:
-  class: DAVIS
+  class: KIBA
   path: ./data/
   split: random
   threshold: 30
@@ -15,9 +15,9 @@ task:
       # vocab_protein_size : 3
       embedding_size: 128
       filter_num: 32
-      dropout: 0.1
+      # No dropout key here: upstream hardcodes nn.Dropout(0.1) three times in the classifier (model.py:368,371,374) and its constructor takes no dropout argument, which models/TDGraphDTA.py:33,36,39 mirrors exactly.
 
-  train: memory_test
+  train: kfold
 
 param_feature:
   max_seq_len: 1000

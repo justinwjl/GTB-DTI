@@ -11,7 +11,7 @@ from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnum
 from torch_geometric.data import Data
 
 class EmbedDTI_featurize:
-    def __init__(self, max_prot_len=1000, MST_MAX_WEIGHT=100):
+    def __init__(self, max_prot_len=1000, MST_MAX_WEIGHT=100, **config):
         self.feat_name = 'EmbedDTI'
         self.atom_map = ['C', 'N', 'O', 'S', 'F', 'Si', 'P', 'Cl', 'Br', 'Mg', 'Na', 'Ca', 'Fe', 'As', 'Al', 'I', 'B',
                          'V', 'K', 'Tl', 'Yb', 'Sb', 'Sn', 'Ag', 'Pd', 'Co', 'Se', 'Ti', 'Zn', 'H', 'Li', 'Ge', 'Cu',

@@ -252,73 +252,12 @@ class Encoder(nn.Module):
 
         layer_nodes_embed = torch.stack(node_embed_list, dim=1).unsqueeze(-1)
 
-        pos_global_node = self.layer_conv(layer_nodes_embed).squeeze()
-        # pos_global_node, neg_global_node = global_node_embed[0], global_node_embed[1]
-        # neg_global_graph = global_add_pool(neg_global_node, batch)
-
-        if percent:
-            mask = self.sampling_subgraph(percent, batch)
-            sampling_subgraph_list = []
-            for i in range(self.num_sub_graph):
-                sampling_subgraph_list.append(global_add_pool(pos_global_node[mask[i, :]], batch=batch[mask[i, :]]))
-            sampling_subgraph_ = torch.stack(sampling_subgraph_list, dim=1).unsqueeze(1)
-            sampling_subgraph = self.subgraph_conv(sampling_subgraph_).squeeze()
-        elif self.mode == 'MH':
-            sampling_subgraph, assignment_prob = self.multi_head_subgraph_generation(pos_global_node, batch)
-            prob_loss = -torch.sum(torch.abs(assignment_prob[:, :, 0] - assignment_prob[:, :, 1]))
-        elif self.mode == 'TS':
-            sampling_subgraph_list, assignment_prob = self.generate_subgraphs(pos_global_node, batch, self.times)
-
-            # prob_loss = -torch.sum(torch.abs(assignment_prob[:, :, 0] - assignment_prob[:, :, 1]))
-            # sampling_subgraph_ = torch.stack(sampling_subgraph_list, dim=1).unsqueeze(-1)
-            # sampling_subgraph = self.subgraph_conv(sampling_subgraph_).squeeze()
-
-            sampling_subgraph = torch.stack(sampling_subgraph_list, dim=1)  # num_sub * batch   dim
-            sub = sampling_subgraph.reshape((int(batch[-1]) + 1) * self.num_subgraph, 128)  # batch * 4 128
-
-            # 相似度矩阵
-            cos_sim = torch.cosine_similarity(sub.unsqueeze(1), sub.unsqueeze(0), dim=-1)
-
-            # 将对角线设置为0
-            cos = cos_sim - torch.diag_embed(torch.diag(cos_sim))
-            # print(cos_sim.shape)
-
-            # 替换n
-            sub_new = []
-            num_sub = self.num_subgraph
-            for i in range(0, int(batch[-1] + 1) * num_sub, num_sub):  # 以子图数目为一个步长
-                # 在子图中选出相似度最高的一半子图替换
-
-                sub_tmp = sub[i:i + num_sub, :]  # 子图特征
-
-                cos_value = np.array(cos[i:i + num_sub, :].cpu().detach().numpy())  #
-                # 不应该删除，应该设为0
-                cos_value[:, 0:num_sub] = 0  # 将同一子图内的设置为0
-
-                key = [int(np.argmax(cos_value[j])) for j in range(0, num_sub)]
-                value = [np.max(cos_value[j]) for j in range(0, num_sub)]
-
-                # 排序
-                # 遇见排序后重复的怎么办 按照排序的默认方式
-                sorted_nums = sorted(enumerate(value), key=lambda x: x[1], reverse=True)
-                idx = [i[0] for i in sorted_nums]
-                nums = [i[1] for i in sorted_nums]
-
-                # 排序取子图的一半
-                for m in range(len(idx) // 2):
-                    sub_tmp[idx[m]] = sub[key[idx[m]]]
-
-                sub_new.append(sub_tmp)
-
-            sub_graph = torch.cat(sub_new, dim=0).reshape(int(batch[-1] + 1), num_sub, self.dim).unsqueeze(-1)
-            sub_graph = self.subgraph_conv(sub_graph).squeeze()
-            # sampling_subgraph_ = torch.stack(sub_new, dim=1).unsqueeze(-1)
-            # sampling_subgraph = self.subgraph_conv(sampling_subgraph_).squeeze()
-
-
-        else:
-            assert False, 'wrong parameter for subgraphs'
-
+        # Squeeze only the conv channel and the trailing dim: a bare squeeze() also drops the node
+        # dimension when the batch holds a single node (a one-atom drug alone in the last batch).
+        pos_global_node = self.layer_conv(layer_nodes_embed).squeeze(-1).squeeze(1)
+        # Upstream's subgraph branch (sampling / multi-head / tree-split) belongs to the paper's
+        # self-supervised pre-training stage: forward returns only pos_global_graph, so none of it
+        # reaches the prediction. Dropping it leaves the output identical.
         pos_global_graph = global_add_pool(pos_global_node, batch)
 
         # info_nce = self.nce_out(pos_global_node, pos_global_graph, neg_global_graph, batch)

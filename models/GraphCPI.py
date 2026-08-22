@@ -70,7 +70,7 @@ class GraphCPI_GATGCN(nn.Module):
     
 class GraphCPI_GAT(nn.Module):
     def __init__(self, num_features_xd=78, n_output=1, num_features_xt=25,
-                     n_filters=32, embed_dim=128, output_dim=128, dropout=0.6, **config):
+                     n_filters=32, embed_dim=128, output_dim=128, dropout=0.2, **config):
         super(GraphCPI_GAT, self).__init__()
 
         self.n_output = n_output
@@ -131,7 +131,7 @@ class GraphCPI_GAT(nn.Module):
 
     
 class GraphCPI_GCN(nn.Module):
-    def __init__(self, n_output=1, n_filters=32, embed_dim=128,num_features_xd=78, num_features_xt=25, output_dim=128, dropout=0.5, **config):
+    def __init__(self, n_output=1, n_filters=32, embed_dim=128,num_features_xd=78, num_features_xt=25, output_dim=128, dropout=0.2, **config):
 
         super(GraphCPI_GCN, self).__init__()
         # 78 91 102 106 109 110
@@ -148,9 +148,10 @@ class GraphCPI_GCN(nn.Module):
 
         # protein sequence branch (1d conv)
         embedding_matrix = pd.read_csv(config['feat_root'] + f'/embedding_3_100d.csv')
-        # embedding_matrix = pd.read_csv('/disk3/jyxie/code/zxn/Antibody-Benchmark/data/Davis/regression_random_42/GraphCPI/embedding_3_100d.csv')
         embedding_weight = embedding_matrix.values
-        self.embedding_xt = nn.Embedding.from_pretrained(torch.FloatTensor(embedding_weight), freeze=True)
+        # Upstream freezes an externally pretrained ProtVec table; here word2vec is self-trained on
+        # the benchmark's own few thousand proteins, so there is no external knowledge to protect.
+        self.embedding_xt = nn.Embedding.from_pretrained(torch.FloatTensor(embedding_weight), freeze=False)
         self.conv_xt_1 = nn.Conv1d(in_channels=1000, out_channels=n_filters, kernel_size=8)
         self.fc1_xt = nn.Linear(32*93, output_dim)
 
@@ -200,7 +201,7 @@ class GraphCPI_GCN(nn.Module):
     
 class GraphCPI_GIN(nn.Module):
     def __init__(self, n_output=1,num_features_xd=78, num_features_xt=25,
-                 n_filters=32, embed_dim=128, output_dim=128, dropout=0.6, **config):
+                 n_filters=32, embed_dim=128, output_dim=128, dropout=0.2, **config):
 
         super(GraphCPI_GIN, self).__init__()
 
