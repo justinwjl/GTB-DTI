@@ -23,6 +23,7 @@ class Trainer:
     # Keys build_optimizer interprets itself; the rest are forwarded to the optimizer constructor.
     OPTIMIZER_KEYS = {'class', 'lr', 'weight_decay', 'no_decay_on_bias',
                       'scheduler', 'step_size', 'gamma', 'warmup_steps',
+                      'cosine_epochs', 'cosine_min_lr',
                       'lookahead', 'lookahead_k', 'lookahead_alpha',
                       'clip_grad_norm'}
 
@@ -163,13 +164,16 @@ class Trainer:
             ), 'epoch'
         if kind == 'cosine_warmup':
             warmup = optimizer_config.get('warmup_steps', 10)
-            total = max(1, steps_per_epoch * self.cfg.train['num_epoch'])
+            horizon = optimizer_config.get('cosine_epochs', self.cfg.train['num_epoch'])
+            total = max(1, steps_per_epoch * horizon)
+            floor = optimizer_config.get('cosine_min_lr', 0.0) / optimizer_config['lr']
 
             def lr_scale(step):
                 if step < warmup:
                     return step / max(1, warmup)
                 progress = (step - warmup) / max(1, total - warmup)
-                return max(0.0, 0.5 * (1.0 + math.cos(math.pi * min(1.0, progress))))
+                cosine = 0.5 * (1.0 + math.cos(math.pi * min(1.0, progress)))
+                return floor + (1.0 - floor) * cosine
 
             return lr_scheduler.LambdaLR(optimizer, lr_scale), 'step'
         raise ValueError(f"Unknown optimizer.scheduler {kind!r} (expected false, 'step' or 'cosine_warmup')")

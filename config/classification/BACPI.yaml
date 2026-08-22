@@ -31,10 +31,11 @@ optimizer:
   class: Adam
   lr: 5.0e-4
   scheduler: True
-  # Upstream halves the lr once, at the midpoint of a 20-epoch run (main.py:58,61 --
-  # StepLR(step_size=10, gamma=0.5) over num_epochs=20). Rescaled to this benchmark's
-  # 1000-epoch budget so the single halving still lands at the midpoint.
-  step_size: 500
+  # Upstream's own step size (main.py:58,61 -- StepLR(step_size=10, gamma=0.5) over
+  # num_epochs=20), kept unscaled so the lr trajectory matches upstream epoch for epoch. The
+  # decay then bounds the run on its own: lr reaches 4.9e-7 by epoch 100, improvement stops,
+  # and early stopping ends the fold well before the 1000-epoch cap.
+  step_size: 10
   gamma: 0.5
   amsgrad: True   # main.py:57 -- Adam(..., weight_decay=0, amsgrad=True)
 

@@ -29,6 +29,12 @@ optimizer:
   no_decay_on_bias: True     # upstream puts bias params in a weight_decay=0 group
   scheduler: cosine_warmup   # upstream: get_cosine_schedule_with_warmup, stepped per batch
   warmup_steps: 10
+  cosine_epochs: 100
+  # Upstream's cosine ends at exactly zero, which is well defined there because training stops with
+  # it. Here the run continues until early stopping decides, so the anneal is floored at 0.1% of the
+  # peak lr -- the same regime the StepLR recipes end in (BACPI reaches 4.9e-7, CPI 2.0e-6), where
+  # the lr is negligible but the weights are not frozen.
+  cosine_min_lr: 1.0e-6
 
 engine:
   device: [0]

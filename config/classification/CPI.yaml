@@ -27,9 +27,11 @@ optimizer:
   class: Adam
   lr: 1.0e-3
   scheduler: True
-  # Upstream halves the lr every 10 epochs over a 99-epoch run (run_training.py:212-217), so it
-  # decays 9 times. Rescaled so the same 9 decays span this benchmark's 1000-epoch budget.
-  step_size: 110
+  # Upstream's own step size (run_training.py:212-217 -- halved every 10 epochs over a 99-epoch
+  # run, 9 decays), kept unscaled so the lr trajectory matches upstream epoch for epoch. The 9th
+  # and last upstream decay lands at epoch 90, and the decay then bounds the run on its own:
+  # early stopping ends the fold well before the 1000-epoch cap.
+  step_size: 10
   gamma: 0.5
   weight_decay: 1.0e-6
 
