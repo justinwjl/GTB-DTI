@@ -70,10 +70,13 @@ class CPI_featurize:
             for _ in range(self.radius):
 
                 """Update each node ID considering its neighboring nodes and edges
-                (i.e., r-radius subgraphs or fingerprints)."""
+                (i.e., r-radius subgraphs or fingerprints). Walking the atom indices
+                rather than i_jedge_dict keeps nodes indexable by atom id, so the
+                result stays aligned with the adjacency matrix and unbonded atoms
+                keep an empty neighbourhood instead of dropping out."""
                 fingerprints = []
-                for i, j_edge in i_jedge_dict.items():
-                    neighbors = [(nodes[j], edge) for j, edge in j_edge]
+                for i in range(len(atoms)):
+                    neighbors = [(nodes[j], edge) for j, edge in i_jedge_dict.get(i, [])]
                     fingerprint = (nodes[i], tuple(sorted(neighbors)))
                     fingerprints.append(self.fingerprint_dict[fingerprint])
                 nodes = fingerprints
@@ -83,12 +86,9 @@ class CPI_featurize:
                 _i_jedge_dict = defaultdict(lambda: [])
                 for i, j_edge in i_jedge_dict.items():
                     for j, edge in j_edge:
-                        try:
-                            both_side = tuple(sorted((nodes[i], nodes[j])))
-                            edge = self.edge_dict[(both_side, edge)]
-                            _i_jedge_dict[i].append((j, edge))
-                        except:
-                            continue
+                        both_side = tuple(sorted((nodes[i], nodes[j])))
+                        edge = self.edge_dict[(both_side, edge)]
+                        _i_jedge_dict[i].append((j, edge))
                 i_jedge_dict = _i_jedge_dict
 
         return np.array(fingerprints)

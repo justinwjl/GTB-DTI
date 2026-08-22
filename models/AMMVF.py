@@ -17,7 +17,14 @@ import pickle
 def masked_mean(x, mask):
     """Mean over dim=1 ignoring padded slots. x: [B, L, D], mask: [B, L] with 1 = real token."""
     m = mask.unsqueeze(-1).to(x.dtype)
-    return (x * m).sum(dim=1) / m.sum(dim=1)
+    return (x * m).sum(dim=1) / m.sum(dim=1).clamp(min=1.0)
+
+
+def key_padding_mask(mask):
+    """Positions to IGNORE, the negation of our masks. A row that masked every slot
+    would make the attention softmax return NaN, so such a row masks nothing instead."""
+    pad = mask == 0
+    return pad & ~pad.all(dim=1, keepdim=True)
 
 
 class SelfAttention(nn.Module):
@@ -496,11 +503,12 @@ class InteractionModel(nn.Module):
         
         '''
 
-        # key_padding_mask marks the positions to IGNORE, so it is the negation of our masks
-        compound_attention_output, _ = self.compound_attention(compound_embedded, compound_embedded,
-                                                               compound_embedded, key_padding_mask=compound_mask == 0)
-        protein_attention_output, _ = self.protein_attention(protein_embedded, protein_embedded, protein_embedded,
-                                                             key_padding_mask=protein_mask == 0)
+        compound_attention_output, _ = self.compound_attention(
+            compound_embedded, compound_embedded, compound_embedded,
+            key_padding_mask=key_padding_mask(compound_mask))
+        protein_attention_output, _ = self.protein_attention(
+            protein_embedded, protein_embedded, protein_embedded,
+            key_padding_mask=key_padding_mask(protein_mask))
 
         compound_attention_output = compound_attention_output.permute(1, 0, 2)
         protein_attention_output = protein_attention_output.permute(1, 0, 2)
