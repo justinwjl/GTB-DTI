@@ -24,27 +24,38 @@ class SelfAttention(nn.Module):
         self.w_v = nn.Linear(hid_dim, hid_dim)
         self.fc = nn.Linear(hid_dim, hid_dim)
         self.do = nn.Dropout(dropout)
-        self.scale = torch.sqrt(torch.FloatTensor([hid_dim // n_heads]))
+        self.head_dim = hid_dim // n_heads
+        self.scale = math.sqrt(hid_dim // n_heads)
 
     def forward(self, query, key, value, mask=None):
         bsz = query.shape[0]
-        Q = self.w_q(query)
-        K = self.w_k(key)
-        V = self.w_v(value)
+        Q = self.w_q(query).view(bsz, -1, self.n_heads, self.head_dim).transpose(1, 2)
+        K = self.w_k(key).view(bsz, -1, self.n_heads, self.head_dim).transpose(1, 2)
+        V = self.w_v(value).view(bsz, -1, self.n_heads, self.head_dim).transpose(1, 2)
 
-        Q = Q.view(bsz, -1, self.n_heads, self.hid_dim // self.n_heads).permute(0, 2, 1, 3)
-        K = K.view(bsz, -1, self.n_heads, self.hid_dim // self.n_heads).permute(0, 2, 1, 3)
-        V = V.view(bsz, -1, self.n_heads, self.hid_dim // self.n_heads).permute(0, 2, 1, 3)
+        if Q.dtype == torch.float32:
 
-        energy = torch.matmul(Q, K.permute(0, 1, 3, 2)) / self.scale.to(Q.device)
+            energy = torch.matmul(Q, K.transpose(-1, -2)) / self.scale
+            if mask is not None:
+                energy = energy.masked_fill(mask == 0, -1e10)
+            x = torch.matmul(self.do(F.softmax(energy, dim=-1)), V)
+            return self.fc(x.transpose(1, 2).contiguous().view(bsz, -1, self.hid_dim))
+
+        bias = None
         if mask is not None:
-            energy = energy.masked_fill(mask == 0, -1e10)
-        attention = self.do(F.softmax(energy, dim=-1))
-        x = torch.matmul(attention, V)
-        x = x.permute(0, 2, 1, 3).contiguous()
-        x = x.view(bsz, -1, self.n_heads * (self.hid_dim // self.n_heads))
-        x = self.fc(x)
-        return x
+            # Upstream masks with -1e10 on the score matrix; the same thing expressed as the
+            # additive bias scaled_dot_product_attention takes. The kernel needs the last
+            # dimension contiguous, so a [B, 1, L, 1] row mask has to be widened over the keys
+            # while a [B, 1, 1, L] key mask is already laid out the way it wants.
+            bias = torch.zeros_like(mask, dtype=Q.dtype).masked_fill_(mask == 0, -1e10)
+            if bias.shape[-1] == 1:
+                bias = bias.expand(bsz, 1, Q.shape[2], K.shape[2]).contiguous()
+
+        x = F.scaled_dot_product_attention(
+            Q, K, V, attn_mask=bias, dropout_p=self.do.p if self.training else 0.0)
+
+        x = x.transpose(1, 2).contiguous().view(bsz, -1, self.hid_dim)
+        return self.fc(x)
 
 class Encoder(nn.Module):
     def __init__(self, protein_dim, hid_dim, n_layers, kernel_size , dropout):

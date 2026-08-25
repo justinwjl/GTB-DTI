@@ -35,6 +35,16 @@ class Trainer:
         self.task = cfg.task['class']
         self.evaluater = Evaluator(task=self.task, metrics=cfg['eval_metric'])
         self.device = torch.device(f"cuda:{cfg.engine['device'][0]}" if cfg.engine['device'] else "cpu")
+
+
+        torch.backends.cuda.matmul.allow_tf32 = cfg.engine.get('tf32', True)
+
+        # bf16 only. fp16 would need a GradScaler that isn't wired up here, and its 65504 ceiling cannot hold the -1e10 attention masks the models use.
+        amp = cfg.engine.get('amp', False)
+        if amp not in (False, None, 'bf16'):
+            raise ValueError(f"Unknown engine.amp {amp!r} (expected false or 'bf16')")
+        self.amp_dtype = torch.bfloat16 if amp == 'bf16' else None
+        self.amp_enabled = self.amp_dtype is not None and self.device.type == 'cuda'
         self.model_type = cfg.task.model['class']
         self.seed = seed
 
@@ -95,6 +105,10 @@ class Trainer:
             type(self.optimizer).__name__,
             type(self.scheduler).__name__ if self.scheduler else 'none',
             'per ' + self.scheduler_interval if self.scheduler else 'no schedule'))
+
+    def autocast(self):
+        """Forward-pass precision context. A no-op unless engine.amp asked for a half dtype."""
+        return torch.autocast('cuda', dtype=self.amp_dtype, enabled=self.amp_enabled)
 
     def optimizer_steps(self, dataloader):
         """Optimizer steps per epoch, which is fewer than batches under gradient accumulation."""
@@ -210,10 +224,12 @@ class Trainer:
             if self.device.type == "cuda":
                 batch = cuda(batch, device=self.device)
 
-            output = self.model(batch)
+            with self.autocast():
+                output = self.model(batch)
             target = batch[0].y
 
-            loss = loss_cal(self.loss_func, output, target, type=self.task)
+            # The loss stays in fp32 so the backward pass starts from a full-precision scalar
+            loss = loss_cal(self.loss_func, output.float(), target, type=self.task)
             n_samples = target.numel()
             # A full group divides by exactly accumulation_steps, so only a partial trailing batch sees a different weight than before
             (loss / (group_samples[batch_idx // self.accumulation_steps] / n_samples)).backward()
@@ -253,7 +269,9 @@ class Trainer:
             if self.device.type == "cuda":
                 batch = cuda(batch, device=self.device)
 
-            pred = model(batch)
+            with self.autocast():
+                pred = model(batch)
+            pred = pred.float()
             target = batch[0].y
 
             preds.append(pred)
@@ -350,8 +368,9 @@ class Trainer:
         batch = next(iter(self.train_loader))
         if self.device.type == "cuda":
             batch = cuda(batch, device=self.device)
-        output = self.model(batch)
-        loss = loss_cal(self.loss_func, output, batch[0].y, type=self.task)
+        with self.autocast():
+            output = self.model(batch)
+        loss = loss_cal(self.loss_func, output.float(), batch[0].y, type=self.task)
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
@@ -407,9 +426,10 @@ class Trainer:
                 if epoch >= start_count:
                     usage_dict["data_mem"].append(data_mem / MB)
                 self.logger.info("data mem: %.2f MB" % (data_mem / MB))
-                output = self.model(batch)
+                with self.autocast():
+                    output = self.model(batch)
                 target = batch[0].y
-                loss = loss_cal(self.loss_func, output, target, type=self.task)
+                loss = loss_cal(self.loss_func, output.float(), target, type=self.task)
                 loss = loss.mean()
                 before_backward = get_memory_usage(self.device, False)
                 act_mem = before_backward - init_mem - compute_tensor_bytes([loss, output])

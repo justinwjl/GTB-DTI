@@ -93,17 +93,9 @@ class MolTransformer(nn.Sequential):
         p_encoded_layers = self.p_encoder(p_emb.float(), ex_p_mask.float())
         # print(p_encoded_layers.shape)
 
-        # repeat to have the same tensor size for aggregation   
-        d_aug = torch.unsqueeze(d_encoded_layers, 2).repeat(1, 1, self.max_p, 1)  # repeat along protein size
-        p_aug = torch.unsqueeze(p_encoded_layers, 1).repeat(1, self.max_d, 1, 1)  # repeat along drug size
-
-        i = d_aug * p_aug  # interaction
-        i_v = i.view(int(batch_size / self.gpus), -1, self.max_d, self.max_p)
-        # batch_size x embed size x max_drug_seq_len x max_protein_seq_len
-        i_v = torch.sum(i_v, dim=1)
-        # print(i_v.shape)
+        i_v = torch.einsum('bde,bpe->bdp', d_encoded_layers, p_encoded_layers)
         i_v = torch.unsqueeze(i_v, 1)
-        # print(i_v.shape)
+        # batch_size x 1 x max_drug_seq_len x max_protein_seq_len
 
         i_v = functional.dropout(i_v, p=self.dropout_rate, training=self.training)
 
@@ -135,10 +127,10 @@ class LayerNorm(nn.Module):
         self.variance_epsilon = variance_epsilon
 
     def forward(self, x):
-        u = x.mean(-1, keepdim=True)
-        s = (x - u).pow(2).mean(-1, keepdim=True)
-        x = (x - u) / torch.sqrt(s + self.variance_epsilon)
-        return self.gamma * x + self.beta
+        # Same normalisation, one fused kernel instead of six elementwise passes over the tensor.
+        # gamma/beta keep their names, so existing checkpoints still load.
+        return functional.layer_norm(x, self.gamma.shape, self.gamma, self.beta,
+                                     self.variance_epsilon)
 
 
 class Embeddings(nn.Module):
@@ -198,20 +190,14 @@ class SelfAttention(nn.Module):
         key_layer = self.transpose_for_scores(mixed_key_layer)
         value_layer = self.transpose_for_scores(mixed_value_layer)
 
-        # Take the dot product between "query" and "key" to get the raw attention scores.
-        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
-        attention_scores = attention_scores / math.sqrt(self.attention_head_size)
-
-        attention_scores = attention_scores + attention_mask
-
-        # Normalize the attention scores to probabilities.
-        attention_probs = nn.Softmax(dim=-1)(attention_scores)
-
-        # This is actually dropping out entire tokens to attend to, which might
-        # seem a bit unusual, but is taken from the original Transformer paper.
-        attention_probs = self.dropout(attention_probs)
-
-        context_layer = torch.matmul(attention_probs, value_layer)
+        # softmax(QK^T / sqrt(head_dim) + attention_mask) V with dropout on the weights, same as
+        # upstream, but fused so the [B, heads, L, L] score matrix is never materialised. The
+        # mask already arrives as an additive 0 / -10000 bias of shape [B, 1, 1, L], which is the
+        # layout the kernel wants.
+        context_layer = functional.scaled_dot_product_attention(
+            query_layer, key_layer, value_layer,
+            attn_mask=attention_mask.to(query_layer.dtype),
+            dropout_p=self.dropout.p if self.training else 0.0)
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
         new_context_layer_shape = context_layer.size()[:-2] + (self.all_head_size,)
         context_layer = context_layer.view(*new_context_layer_shape)

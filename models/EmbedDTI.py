@@ -51,6 +51,8 @@ class EmbedDTI_Ori(torch.nn.Module):
         clique_x, clique_edge, cli_batch = cli_data.x, cli_data.edge_index, cli_data.batch
         # get protein input
         target = atom_data.target
+        
+        n_graphs = atom_data.num_graphs
 
         # SMILES graph embedding
         x = self.conv1(x, edge_index)
@@ -61,7 +63,7 @@ class EmbedDTI_Ori(torch.nn.Module):
 
         x = self.conv3(x, edge_index)
         x = self.relu(x) # 得到node-level feature vectors
-        x = gmp(x, batch)       # global max pooling
+        x = gmp(x, batch, size=n_graphs)       # global max pooling
         # flatten
         x = self.relu(self.fc_g1(x))
         x = self.dropout(x)
@@ -77,7 +79,7 @@ class EmbedDTI_Ori(torch.nn.Module):
 
         xq = self.c_conv3(xq, clique_edge)
         xq = self.relu(xq) # 得到node-level feature vectors
-        xq = gmp(xq, cli_batch)       # global max pooling
+        xq = gmp(xq, cli_batch, size=n_graphs)       # global max pooling
 
         # flatten
         xq = self.relu(self.c_g1(xq))
@@ -158,6 +160,8 @@ class EmbedDTI_Pre(torch.nn.Module):
         # get protein input
         target = data_atom.target
 
+        n_graphs = data_atom.num_graphs
+
         # SMILES graph embedding
         x = self.conv1(x, edge_index)
         x = self.relu(x)
@@ -167,7 +171,7 @@ class EmbedDTI_Pre(torch.nn.Module):
 
         x = self.conv3(x, edge_index)
         x = self.relu(x) # 得到node-level feature vectors
-        x = gmp(x, batch)       # global max pooling
+        x = gmp(x, batch, size=n_graphs)       # global max pooling
         # flatten
         x = self.relu(self.fc_g1(x))
         x = self.dropout(x)
@@ -183,7 +187,7 @@ class EmbedDTI_Pre(torch.nn.Module):
 
         xq = self.c_conv3(xq, clique_edge)
         xq = self.relu(xq) # 得到node-level feature vectors
-        xq = gmp(xq, clique_batch)       # global max pooling
+        xq = gmp(xq, clique_batch, size=n_graphs)       # global max pooling
 
         # flatten
         xq = self.relu(self.c_g1(xq))
@@ -272,6 +276,8 @@ class EmbedDTI_Attn(torch.nn.Module):
         # get protein input
         target = data_atom.target
 
+        n_graphs = data_atom.num_graphs
+
         # SMILES graph embedding
         x = torch.mul(x,w_atom)
         x = self.conv1(x, edge_index)
@@ -282,7 +288,7 @@ class EmbedDTI_Attn(torch.nn.Module):
 
         x = self.conv3(x, edge_index)
         x = self.relu(x) # 得到node-level feature vectors
-        x = gmp(x, batch)       # global max pooling
+        x = gmp(x, batch, size=n_graphs)       # global max pooling
         # flatten
         x = self.relu(self.fc_g1(x))
         x = self.dropout(x)
@@ -299,7 +305,7 @@ class EmbedDTI_Attn(torch.nn.Module):
 
         xq = self.c_conv3(xq, clique_edge)
         xq = self.relu(xq) # 得到node-level feature vectors
-        xq = gmp(xq, clique_batch)       # global max pooling
+        xq = gmp(xq, clique_batch, size=n_graphs)       # global max pooling
 
         # flatten
         xq = self.relu(self.c_g1(xq))

@@ -72,7 +72,8 @@ if __name__ == '__main__':
     start_time = time.strftime("%Y%m%d-%H%M%S")
     exp_name = cfg.task.model['class'] + f"-{start_time}"
 
-    perf_save_path = os.path.join(cfg['output_dir'], cfg.dataset['class'], exp_name)
+    dataset_dir = cfg.dataset['class'] + ('-memory' if cfg.task['train'] == 'memory_test' else '')
+    perf_save_path = os.path.join(cfg['output_dir'], dataset_dir, exp_name)
     if not os.path.exists(perf_save_path):
         os.makedirs(perf_save_path)
 

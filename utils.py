@@ -27,6 +27,9 @@ NM_AFFINITY_DATASETS = {
     'davis', 'bindingdb_kd', 'bindingdb_ki', 'bindingdb_ic50', 'bindingdb_patent',
 }
 
+# Flip to True to put KIBA through the same -log10 transform; its labels then cache under *_log.
+KIBA_LOG = True
+
 
 def load_config(cfg_file):
     with open(cfg_file, "r", encoding='utf-8') as fin:
@@ -63,6 +66,7 @@ def load_data(split_types=('train', 'val', 'test'), load_from_tdc=False, cfg=Non
         split_file = data_path
     else:
         from tdc.multi_pred import DTI
+        kiba_log = KIBA_LOG and task == 'regression' and cfg['class'].lower() == 'kiba'
         if cfg['class'] in ['Human', 'C.elegans', 'Drugbank']:
             data = DTI_dataset(name=cfg['class'], path=cfg['path'])
         else:
@@ -75,9 +79,9 @@ def load_data(split_types=('train', 'val', 'test'), load_from_tdc=False, cfg=Non
             data.log_flag = False
             if task == 'classification':
                 data.binarize(threshold=cfg['threshold'])
-            elif is_nm_affinity:
+            elif is_nm_affinity or kiba_log:
                 data.convert_to_log(form='binding')
-        split_file = os.path.join(cfg['path'], cfg['class'], task + '_' + cfg['split'] + '_' + str(seed))
+        split_file = os.path.join(cfg['path'], cfg['class'], task + '_' + cfg['split'] + '_' + str(seed) + ('_log' if kiba_log else ''))
         if not os.path.exists(split_file):
             os.makedirs(split_file)
         split = data.get_split(method=cfg['split'], seed=seed)
