@@ -28,7 +28,7 @@ NM_AFFINITY_DATASETS = {
 }
 
 # Flip to True to put KIBA through the same -log10 transform; its labels then cache under *_log.
-KIBA_LOG = True
+KIBA_LOG = False
 
 
 def load_config(cfg_file):

@@ -94,6 +94,7 @@ class Trainer:
         self.score_metric = cfg['score_metric']
         self.epochs = cfg.train['num_epoch']
         self.model_path = model_path
+        self.label_offset = 0.0
         self.accumulation_steps = max(1, cfg.engine.get('accumulation_steps', 1))
         # 0 disables clipping, which is every recipe except BridgeDPI's
         self.clip_grad_norm = cfg.optimizer.get('clip_grad_norm', 0)
@@ -229,7 +230,7 @@ class Trainer:
             target = batch[0].y
 
             # The loss stays in fp32 so the backward pass starts from a full-precision scalar
-            loss = loss_cal(self.loss_func, output.float(), target, type=self.task)
+            loss = loss_cal(self.loss_func, output.float(), target - self.label_offset, type=self.task)
             n_samples = target.numel()
             # A full group divides by exactly accumulation_steps, so only a partial trailing batch sees a different weight than before
             (loss / (group_samples[batch_idx // self.accumulation_steps] / n_samples)).backward()
@@ -271,7 +272,7 @@ class Trainer:
 
             with self.autocast():
                 pred = model(batch)
-            pred = pred.float()
+            pred = pred.float() + self.label_offset
             target = batch[0].y
 
             preds.append(pred)
@@ -315,6 +316,9 @@ class Trainer:
                                       num_workers=num_worker)
             val_loader = DataLoader(self.kfold_set, batch_size=self.batch_size, sampler=val_subsampler,
                                     num_workers=num_worker)
+            if self.task == 'regression' and self.cfg.dataset['class'].lower() == 'kiba':
+                # Uncentred KIBA targets (mean 11.7) kill about half the head's ReLUs within the first Adam steps
+                self.label_offset = self.kfold_set.data_list[0].y[train_ids].mean().item()
 
             self.optimizer, self.scheduler = self.build_optimizer(self.optimizer_steps(train_loader))
             epoch = -1
