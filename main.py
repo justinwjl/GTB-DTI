@@ -59,6 +59,10 @@ def parse_args():
 
     parser.add_argument('--seed', type=int, default=42, help='random seed')
 
+    parser.add_argument('--fold', type=int, default=None, help='only this fold')
+
+    parser.add_argument('--exp-name', default=None, help='same exp name shared across folds')
+
     return parser.parse_known_args()[0]
 
 
@@ -70,20 +74,19 @@ if __name__ == '__main__':
 
     set_seed(args.seed)
     start_time = time.strftime("%Y%m%d-%H%M%S")
-    exp_name = cfg.task.model['class'] + f"-{start_time}"
+    exp_name = args.exp_name or cfg.task.model['class'] + f"-{start_time}"
 
     dataset_dir = cfg.dataset['class'] + ('-memory' if cfg.task['train'] == 'memory_test' else '')
     perf_save_path = os.path.join(cfg['output_dir'], dataset_dir, exp_name)
-    if not os.path.exists(perf_save_path):
-        os.makedirs(perf_save_path)
+    os.makedirs(perf_save_path, exist_ok=True)
 
-    logger = get_logger(perf_save_path + '/exp.log')
+    logger = get_logger(perf_save_path + ('/exp.log' if args.fold is None else f'/exp_fold{args.fold}.log'))
     logger.info(cfg)
 
     trainer = Trainer(cfg, logger, model_path=perf_save_path, seed=args.seed)
 
     if cfg.task['train'] == 'kfold':
-        trainer.K_fold_train()
+        trainer.K_fold_train(only_fold=args.fold)
     elif cfg.task['train'] == 'memory_test':
         trainer.mem_speed_bench()
     else:

@@ -1,3 +1,4 @@
+import fcntl
 import math
 import warnings
 import time
@@ -60,7 +61,9 @@ class Trainer:
         featurizer = get_featurizer(**param_feature)
         num_worker = 0
 
-        self.test_set = DT_dataset(root=dataset_path, featurizer=featurizer, data=dataset, split='test')
+        with open(os.path.join(dataset_path, featurizer.feat_name + '.lock'), 'w') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            self.test_set = DT_dataset(root=dataset_path, featurizer=featurizer, data=dataset, split='test')
         self.test_loader = DataLoader(self.test_set, batch_size=self.batch_size, shuffle=False, num_workers=num_worker)
         self.train_set = DT_dataset(root=dataset_path, featurizer=featurizer, data=dataset, split='train')
         self.train_loader = DataLoader(self.train_set, batch_size=self.batch_size, shuffle=True, num_workers=num_worker)
@@ -285,18 +288,20 @@ class Trainer:
 
         return metric
 
-    def K_fold_train(self, n_splits=5, early_stop_patience=50):
+    def K_fold_train(self, n_splits=5, early_stop_patience=50, only_fold=None):
 
         # data
-        results = {}
         result = []
-        exit_epoch_info = {}  # epoch at which each fold stopped
-        best_epoch_info = {}
         num_worker = 0
         kfold = KFold(n_splits=n_splits, shuffle=True, random_state=self.seed)
         loss_dict = {}
         lower_is_better = self.score_metric in ('mse', 'rmse', 'mae')
         for fold, (train_ids, val_ids) in enumerate(kfold.split(self.kfold_set)):
+            if only_fold is not None and fold != only_fold:
+                continue
+            if os.path.isfile(os.path.join(self.model_path, f'fold_{fold}.json')):
+                self.logger.info(f'Fold {fold} already finished, skipped')
+                continue
             if fold not in loss_dict:
                 loss_dict[fold] = []
 
@@ -340,28 +345,38 @@ class Trainer:
                 if epoch - best_epoch >= early_stop_patience:
                     self.logger.info(f"Early stopping triggered at epoch {epoch} with best epoch {best_epoch}.")
                     break
-            # epoch holds the last executed epoch, whether the loop broke early or ran to completion
-            exit_epoch_info[fold] = epoch
-            best_epoch_info[fold] = best_epoch
-            results[fold] = metric_test
             self.logger.info('Test for fold {0}:{1}'.format(fold, metric_test))
             self.logger.info('--------------------------------')
             df_loss = pd.DataFrame({fold: pd.Series(loss_list) for fold, loss_list in loss_dict.items()})
             df_loss.to_csv(os.path.join(self.model_path, f'loss_dict{fold}.csv'), index=False)
-            
-        self.logger.info(results)
-        df_loss = pd.DataFrame({fold: pd.Series(loss_list) for fold, loss_list in loss_dict.items()})
-        df_loss.to_csv(os.path.join(self.model_path, 'loss_dict.csv'), index=False)
+            # epoch holds the last executed epoch, whether the loop broke early or ran to completion
+            with open(os.path.join(self.model_path, 'results.lock'), 'a') as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+                with open(os.path.join(self.model_path, f'fold_{fold}.json'), 'w') as f:
+                    json.dump({'test': metric_test, 'exit_epoch': epoch, 'best_epoch': best_epoch,
+                               'loss': loss_dict[fold]}, f, default=float)
 
-        df_results = pd.DataFrame(results).apply(pd.to_numeric, errors='coerce')
-        df_results.loc['exit_epoch'] = pd.Series(exit_epoch_info)
-        df_results.loc['best_epoch'] = pd.Series(best_epoch_info)
+        with open(os.path.join(self.model_path, 'results.lock'), 'a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            paths = [os.path.join(self.model_path, f'fold_{k}.json') for k in range(n_splits)]
+            if not all(os.path.isfile(p) for p in paths):
+                return
+            folds = [json.load(open(p)) for p in paths]
+            results = {k: f['test'] for k, f in enumerate(folds)}
 
-        fold_columns = list(df_results.columns)
-        df_results['mean'] = df_results[fold_columns].mean(axis=1)
-        df_results['std'] = df_results[fold_columns].std(axis=1, ddof=1)
-        # The index holds the metric names, so it has to be written out
-        df_results.to_csv(os.path.join(self.model_path, 'results.csv'), index=True)
+            self.logger.info(results)
+            df_loss = pd.DataFrame({k: pd.Series(f['loss']) for k, f in enumerate(folds)})
+            df_loss.to_csv(os.path.join(self.model_path, 'loss_dict.csv'), index=False)
+
+            df_results = pd.DataFrame(results).apply(pd.to_numeric, errors='coerce')
+            df_results.loc['exit_epoch'] = [f['exit_epoch'] for f in folds]
+            df_results.loc['best_epoch'] = [f['best_epoch'] for f in folds]
+
+            fold_columns = list(df_results.columns)
+            df_results['mean'] = df_results[fold_columns].mean(axis=1)
+            df_results['std'] = df_results[fold_columns].std(axis=1, ddof=1)
+            # The index holds the metric names, so it has to be written out
+            df_results.to_csv(os.path.join(self.model_path, 'results.csv'), index=True)
 
     def warmup_optimizer_state(self):
         """Run one full step so the optimizer's lazily allocated state exists before measuring.
